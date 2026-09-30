@@ -3,6 +3,13 @@ from tools.business_tools import (
     search_business_preferences
 )
 
+from tools.filesystem_tools import (
+    read_file,
+    write_file,
+    READ_FILE_DEFINITION,
+    WRITE_FILE_DEFINITION
+)
+
 
 # ============================================================
 # 2. DEFINICIONES DE LAS TOOLS QUE VERÁ EL MODELO
@@ -86,6 +93,14 @@ TOOL_SPECS = [
     {
         "definition": SEARCH_BUSINESS_PREFERENCES_DEFINITION,
         "handler": search_business_preferences
+    },
+    {
+        "definition": READ_FILE_DEFINITION,
+        "handler": read_file
+    },
+    {
+        "definition": WRITE_FILE_DEFINITION,
+        "handler": write_file
     }
 ]
 

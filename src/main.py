@@ -3,13 +3,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from state.project_state import ProjectState
-from context.context_builders import (build_ux_context, build_copy_context, build_design_context)
+from context.context_builders import (
+    build_ux_context,
+    build_copy_context,
+    build_design_context,
+    build_developer_context)
 from specs.website_spec_builder import build_website_spec
 from agents.agent_runner import run_agent
 from agents.business_agent import BUSINESS_AGENT
 from agents.ux_agent import UX_AGENT
 from agents.copy_agent import COPY_AGENT
 from agents.design_agent import DESIGN_AGENT
+from agents.developer_agent import DEVELOPER_AGENT
 
 state = ProjectState()
 
@@ -84,3 +89,17 @@ print("\nWEBSITE SPEC:")
 print(
     state.website_spec.model_dump_json(indent=2)
 )
+
+# ============================================================
+# DEVELOPMENT AGENT
+# ============================================================
+
+developer_context = build_developer_context(state)
+
+state.development = run_agent(
+    agent=DEVELOPER_AGENT,
+    user_input=developer_context
+)
+
+print("\n=== DEVELOPMENT RESULT ===")
+print(state.development)

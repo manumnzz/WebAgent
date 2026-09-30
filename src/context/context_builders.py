@@ -51,3 +51,19 @@ def build_design_context(state: ProjectState) -> str:
     }
 
     return json.dumps(context)
+
+def build_developer_context(state: ProjectState) -> str:
+
+    if state.website_spec is None:
+        raise ValueError(
+            "WebsiteSpec no disponible para DeveloperAgent."
+        )
+
+    website_spec_json = state.website_spec.model_dump_json(indent=2)
+
+    return f"""
+        MODE: generate
+
+        WEBSITE_SPEC:
+        {website_spec_json}
+    """

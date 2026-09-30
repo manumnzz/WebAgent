@@ -4,7 +4,9 @@ from agents.business_agent import BusinessProfile
 from agents.ux_agent import WebsiteStructure
 from agents.copy_agent import WebsiteCopy
 from agents.design_agent import DesignSpec
+from agents.developer_agent import DevelopmentResult
 from specs.website_spec import WebsiteSpec
+
 
 class ProjectState(BaseModel):
     business: BusinessProfile | None = None
@@ -12,5 +14,6 @@ class ProjectState(BaseModel):
     website_copy: WebsiteCopy | None = None
     design: DesignSpec | None = None
     website_spec: WebsiteSpec | None = None
+    development: DevelopmentResult | None = None
 
 

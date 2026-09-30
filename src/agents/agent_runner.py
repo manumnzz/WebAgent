@@ -15,7 +15,7 @@ client = OpenAI()
 def run_agent(
     agent: AgentConfig,
     user_input: str,
-    max_steps: int = 5
+    max_steps: int = 10
 ):
 
     input_messages = [
