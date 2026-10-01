@@ -3,54 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Apex Barber Club — cortes masculinos, degradados y arreglo de barba en Sevilla.">
+  <meta name="description" content="Apex Barber Club — barbería moderna y premium en Sevilla.">
   <title>Apex Barber Club — Sevilla</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="#inicio" aria-label="Apex Barber Club, inicio"><span class="brand-mark">A</span><span>APEX <b>BARBER CLUB</b></span></a>
-    <nav class="desktop-nav" aria-label="Navegación principal">
-      <a href="#inicio">Inicio</a><a href="#servicios">Servicios</a><a href="#reserva">Reserva online</a><a href="#barberia">La barbería</a><a href="#galeria">Galería</a><a href="#contacto">Ubicación y contacto</a><a href="#faq">Preguntas frecuentes</a>
+    <a class="brand" href="#inicio" aria-label="Apex Barber Club, inicio"><span class="brand-mark">A</span><span>APEX <em>BARBER CLUB</em></span></a>
+    <button class="menu-toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+    <nav class="main-nav" aria-label="Navegación principal">
+      <a href="#servicios">Servicios</a><a href="#sobre-nosotros">Sobre nosotros</a><a href="#galeria">Galería</a><a href="#opiniones">Opiniones</a><a href="#contacto">Ubicación y contacto</a><a href="#faq">Preguntas frecuentes</a>
+      <a class="nav-cta" href="#reservar">Reservar cita online <span>↗</span></a>
     </nav>
-    <a class="nav-cta" href="#reserva">Reservar online <span>↗</span></a>
-    <button class="menu-toggle" aria-label="Abrir menú">☰</button>
   </header>
 
   <main>
-    <section class="hero section-pad" id="inicio">
+    <section class="hero" id="inicio">
       <div class="hero-copy">
-        <p class="eyebrow">BARBERÍA CONTEMPORÁNEA <i></i> SEVILLA</p>
-        <h1>Tu estilo,<br><em>llevado</em> al<br>siguiente nivel</h1>
-        <p class="lead">Apex Barber Club es una barbería en Sevilla especializada en cortes masculinos, degradados y arreglo de barba. Encuentra tu próximo look y reserva tu cita online.</p>
-        <a class="button button-bronze" href="#reserva">Reservar online <span>↗</span></a>
+        <p class="eyebrow">BARBERÍA · SEVILLA</p>
+        <h1>Tu estilo,<br><i>al siguiente nivel</i></h1>
+        <p class="lead">Apex Barber Club es una barbería moderna y premium en Sevilla, especializada en cortes masculinos, degradados y arreglo de barba. Elige tu servicio y reserva tu cita online.</p>
+        <a class="button button-bronze" href="#reservar">Reservar cita online <span>↗</span></a>
       </div>
-      <div class="hero-visual placeholder-art" aria-label="Espacio reservado para fotografía principal">
-        <div class="vertical-label">APEX / EST. SEVILLA</div><div class="visual-ring"></div><div class="visual-note">IMAGEN<br>PRINCIPAL<br><small>PENDIENTE</small></div>
+      <div class="hero-art" aria-label="Composición gráfica Apex Barber Club">
+        <div class="art-ring"></div><div class="art-letter">A</div><div class="art-line"></div>
+        <span class="art-caption">PRECISIÓN<br>Y CARÁCTER</span><span class="art-number">01 / 03</span>
       </div>
-      <div class="hero-foot"><span>01</span><span class="line"></span><span>PRECISIÓN · CARÁCTER · ESTILO</span></div>
+      <div class="hero-bottom"><span>APEX BARBER CLUB</span><span>MODERN GROOMING / 2024</span></div>
     </section>
 
-    <section class="services section-pad" id="servicios">
-      <div class="section-heading"><div><p class="eyebrow">01 / SERVICIOS</p><h2>Precisión en<br><em>cada detalle</em></h2></div><p class="section-intro">Elige el servicio que mejor encaja contigo: cortes masculinos, degradados y arreglo de barba. Un cuidado pensado para definir tu estilo en Apex Barber Club.</p></div>
-      <div class="service-grid">
-        <article class="service-card"><span class="service-number">01</span><div class="service-icon">✦</div><h3>Cortes<br>masculinos</h3><p>El corte que define tu estilo, trabajado con precisión y atención al detalle.</p><div class="service-meta">DURACIÓN Y PRECIO <span>—</span></div><a href="#reserva">Seleccionar servicio <b>↗</b></a></article>
-        <article class="service-card featured"><span class="service-number">02</span><div class="service-icon">◒</div><h3>Degradados</h3><p>Transiciones limpias y un acabado contemporáneo adaptado a tu look.</p><div class="service-meta">DURACIÓN Y PRECIO <span>—</span></div><a href="#reserva">Seleccionar servicio <b>↗</b></a></article>
-        <article class="service-card"><span class="service-number">03</span><div class="service-icon">⌁</div><h3>Arreglo<br>de barba</h3><p>Definición y cuidado para una barba con carácter, forma y equilibrio.</p><div class="service-meta">DURACIÓN Y PRECIO <span>—</span></div><a href="#reserva">Seleccionar servicio <b>↗</b></a></article>
-      </div>
+    <section class="section services" id="servicios">
+      <div class="section-intro"><p class="eyebrow">01 / SERVICIOS</p><h2>Servicios para un<br><i>estilo impecable</i></h2></div>
+      <div class="section-content"><p class="section-body">Descubre los servicios de Apex Barber Club y elige el que mejor se adapta a tu estilo. Reserva tu cita online de forma sencilla.</p><div class="service-list">
+        <article class="service-card"><span class="service-no">01</span><h3>Cortes<br>masculinos</h3><p>Detalles del servicio próximamente.</p><a href="#reservar">Reservar <span>↗</span></a></article>
+        <article class="service-card featured"><span class="service-no">02</span><h3>Degradados</h3><p>Detalles del servicio próximamente.</p><a href="#reservar">Reservar <span>↗</span></a></article>
+        <article class="service-card"><span class="service-no">03</span><h3>Arreglo<br>de barba</h3><p>Detalles del servicio próximamente.</p><a href="#reservar">Reservar <span>↗</span></a></article>
+      </div></div>
     </section>
 
-    <section class="booking section-pad" id="reserva"><div class="booking-panel"><div><p class="eyebrow">02 / RESERVA ONLINE</p><h2>Reserva tu<br><em>próxima cita</em></h2><p>Selecciona el servicio que quieres y completa tu reserva online en Apex Barber Club.</p></div><div class="booking-form"><div class="step"><span>01</span><strong>Selecciona tu servicio</strong><small>Disponible próximamente</small></div><div class="step disabled"><span>02</span><strong>Elige fecha y hora</strong><small>—</small></div><div class="step disabled"><span>03</span><strong>Completa tus datos</strong><small>—</small></div><button class="button button-disabled" disabled>Sistema de reservas pendiente</button><p class="form-note">El enlace o sistema de reservas online se incorporará cuando esté disponible.</p></div></div></section>
+    <section class="booking-band" id="reservar"><div><p class="eyebrow">RESERVA ONLINE</p><h2>Tu próxima cita<br><i>empieza aquí.</i></h2></div><div class="booking-note"><p>El sistema de reservas online estará disponible próximamente.</p><a class="button button-outline is-disabled" href="#reservar" aria-disabled="true">Reservar cita online <span>↗</span></a></div></section>
 
-    <section class="about section-pad" id="barberia"><div class="about-visual placeholder-art"><div class="visual-note">FOTOGRAFÍAS<br>DEL LOCAL<br><small>PENDIENTES</small></div></div><div class="about-copy"><p class="eyebrow">03 / LA BARBERÍA</p><h2>Apex<br><em>Barber Club</em></h2><p>Un espacio de barbería en Sevilla para quienes buscan cuidar su imagen a través de cortes masculinos, degradados y arreglo de barba.</p><p class="muted-note">La historia, presentación ampliada y fotografías del espacio se incorporarán próximamente.</p><a class="text-link" href="#contacto">Descubrir la barbería <span>↗</span></a></div></section>
+    <section class="section process"><div class="section-intro"><p class="eyebrow">02 / RESERVA</p><h2>Reserva tu cita<br><i>en pocos pasos</i></h2></div><div class="section-content"><p class="section-body">Selecciona el servicio que necesitas, elige el momento que mejor te convenga y confirma tu cita con Apex Barber Club.</p><div class="steps"><div><b>01</b><h3>Elige tu servicio</h3><p>Selecciona la opción que mejor se adapta a ti.</p></div><div><b>02</b><h3>Escoge tu momento</h3><p>Elige el día y la hora que más te convenga.</p></div><div><b>03</b><h3>Confirma tu cita</h3><p>Completa tu reserva de forma sencilla.</p></div></div></div></section>
 
-    <section class="gallery section-pad" id="galeria"><div class="section-heading"><div><p class="eyebrow">04 / GALERÍA</p><h2>El estilo se ve<br>en los <em>detalles</em></h2></div><p class="section-intro">Descubre una selección visual de cortes masculinos, degradados, arreglos de barba y del ambiente de Apex Barber Club.</p></div><div class="gallery-grid"><div class="gallery-tile tall placeholder-art"><span>TRABAJOS REALIZADOS<br><small>IMAGEN PENDIENTE</small></span></div><div class="gallery-tile placeholder-art"><span>DEGRADADOS<br><small>IMAGEN PENDIENTE</small></span></div><div class="gallery-tile placeholder-art"><span>ARREGLO DE BARBA<br><small>IMAGEN PENDIENTE</small></span></div><div class="gallery-tile placeholder-art"><span>EL ESPACIO<br><small>IMAGEN PENDIENTE</small></span></div></div></section>
+    <section class="about section" id="sobre-nosotros"><div class="about-block"><p class="eyebrow">03 / APEX</p><h2>Una barbería<br><i>con actitud propia</i></h2><p>Apex Barber Club lleva una propuesta moderna y premium a Sevilla, con servicios de cortes masculinos, degradados y arreglo de barba.</p><a href="#servicios" class="text-link">Conoce nuestros servicios <span>↗</span></a></div><div class="about-art"><span>APEX</span><strong>ABC</strong><small>EST. SEVILLA</small></div></section>
 
-    <section class="contact section-pad" id="contacto"><div class="contact-copy"><p class="eyebrow">05 / UBICACIÓN Y CONTACTO</p><h2>Nos encontramos<br>en <em>Sevilla</em></h2><p>Consulta cómo llegar a Apex Barber Club y contacta con la barbería antes de tu cita.</p><div class="contact-list"><div><small>UBICACIÓN</small><strong>Sevilla</strong><span>Dirección completa pendiente</span></div><div><small>CONTACTO</small><strong>—</strong><span>Teléfono o canal de contacto pendiente</span></div><div><small>HORARIOS</small><strong>—</strong><span>Horarios de apertura pendientes</span></div></div><a class="button button-outline" href="#reserva">Contactar <span>↗</span></a></div><div class="map-placeholder"><div class="map-grid"></div><span>MAPA<br><small>PENDIENTE</small></span></div></section>
+    <section class="gallery section" id="galeria"><div class="section-heading"><div><p class="eyebrow">04 / GALERÍA</p><h2>Estilo que <i>se ve</i></h2></div><p>Explora una selección de cortes masculinos, degradados, arreglos de barba y el espacio de Apex Barber Club.</p></div><div class="gallery-empty"><span class="empty-symbol">+</span><p>La galería de trabajos y espacio estará disponible próximamente.</p></div></section>
 
-    <section class="faq section-pad" id="faq"><div class="section-heading"><div><p class="eyebrow">06 / PREGUNTAS FRECUENTES</p><h2>Resuelve tus dudas<br><em>antes de reservar</em></h2></div><p class="section-intro">Encuentra la información que necesitas sobre reservas, servicios, cambios de cita, pagos y cómo llegar a Apex Barber Club.</p></div><div class="faq-list"><details><summary>¿Cómo puedo reservar mi cita? <span>+</span></summary><p>El sistema de reservas online se incorporará próximamente.</p></details><details><summary>¿Qué servicios ofrece Apex Barber Club? <span>+</span></summary><p>Ofrecemos cortes masculinos, degradados y arreglo de barba.</p></details><details><summary>¿Cuánto dura cada servicio? <span>+</span></summary><p>La duración de los servicios está pendiente de confirmación.</p></details><details><summary>¿Cuál es la política de cambios o cancelaciones? <span>+</span></summary><p>Esta información se incorporará próximamente.</p></details><details><summary>¿Qué métodos de pago están disponibles? <span>+</span></summary><p>Información pendiente de confirmación.</p></details></div></section>
+    <section class="reviews section" id="opiniones"><p class="eyebrow">05 / OPINIONES</p><h2>La experiencia de<br><i>nuestros clientes</i></h2><div class="empty-inline">Las opiniones y valoraciones verificables estarán disponibles próximamente.</div><a class="button button-bronze" href="#reservar">Reservar cita online <span>↗</span></a></section>
+
+    <section class="contact section" id="contacto"><div><p class="eyebrow">06 / CONTACTO</p><h2>Encuéntranos<br><i>en Sevilla</i></h2><p>Visita Apex Barber Club en Sevilla y contacta con la barbería para resolver tus dudas o preparar tu próxima cita.</p><a class="button button-bronze" href="#reservar">Reservar cita online <span>↗</span></a></div><div class="contact-card"><div class="map-placeholder"><span>SEVILLA</span><div class="map-cross">+</div></div><p class="muted">La dirección exacta, horario y canales de contacto estarán disponibles próximamente.</p></div></section>
+
+    <section class="faq section" id="faq"><div class="section-heading"><div><p class="eyebrow">07 / FAQ</p><h2>Resolvemos<br><i>tus dudas</i></h2></div><p>Encuentra la información que necesitas antes de reservar tu cita en Apex Barber Club.</p></div><div class="faq-list"><div class="faq-row"><span>Información de reservas</span><b>+</b></div><div class="faq-row"><span>Cancelaciones y cambios</span><b>+</b></div><div class="faq-row"><span>Llegada y puntualidad</span><b>+</b></div><div class="faq-row"><span>Servicios y pagos</span><b>+</b></div></div><a class="button button-outline" href="#reservar">Reservar cita online <span>↗</span></a></section>
   </main>
-  <footer><div class="brand"><span class="brand-mark">A</span><span>APEX <b>BARBER CLUB</b></span></div><span>SEVILLA · CORTES · CARÁCTER</span><a href="#reserva">Reservar online ↗</a></footer>
+  <footer><a class="brand" href="#inicio"><span class="brand-mark">A</span><span>APEX <em>BARBER CLUB</em></span></a><span>SEVILLA · MODERN GROOMING</span></footer>
   <script src="script.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@ from agents.ux_agent import WebsiteStructure
 from agents.copy_agent import WebsiteCopy
 from agents.design_agent import DesignSpec
 from agents.developer_agent import DevelopmentResult
+from validation.validator import ValidationResult
 from specs.website_spec import WebsiteSpec
 
 
@@ -15,5 +16,6 @@ class ProjectState(BaseModel):
     design: DesignSpec | None = None
     website_spec: WebsiteSpec | None = None
     development: DevelopmentResult | None = None
+    validation: ValidationResult | None = None
 
 

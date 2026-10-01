@@ -67,3 +67,29 @@ def build_developer_context(state: ProjectState) -> str:
         WEBSITE_SPEC:
         {website_spec_json}
     """
+
+def build_developer_repair_context(state: ProjectState) -> str:
+
+    if state.website_spec is None:
+        raise ValueError(
+            "WebsiteSpec no disponible para DeveloperAgent."
+        )
+
+    if state.validation is None:
+        raise ValueError(
+            "ValidationResult no disponible para reparación."
+        )
+
+    website_spec_json = state.website_spec.model_dump_json(indent=2)
+
+    validation_json = state.validation.model_dump_json(indent=2)
+
+    return f"""
+        MODE: repair
+        
+        WEBSITE_SPEC:
+        {website_spec_json}
+
+        VALIDATION_RESULT:
+        {validation_json}
+    """

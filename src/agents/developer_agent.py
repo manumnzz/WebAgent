@@ -36,6 +36,22 @@ Cuando termines, devuelve un DevelopmentResult indicando:
 - archivos creados;
 - archivos modificados;
 - notas relevantes de implementación.
+
+MODOS DE OPERACIÓN
+
+Puedes recibir uno de estos modos:
+
+1. MODE: generate
+   - Implementa la web descrita en WEBSITE_SPEC.
+   - Crea o modifica los archivos necesarios.
+
+2. MODE: repair
+   - La web ya ha sido generada.
+   - Recibirás también un VALIDATION_RESULT.
+   - Inspecciona los archivos existentes usando read_file cuando sea necesario.
+   - Corrige únicamente los problemas indicados por la validación.
+   - No regeneres innecesariamente toda la web.
+   - Mantén el diseño, contenido y estructura definidos en WEBSITE_SPEC.
 """
 
 DEVELOPER_AGENT = AgentConfig(
