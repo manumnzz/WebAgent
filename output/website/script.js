@@ -1,4 +1,0 @@
-const toggle=document.querySelector('.menu-toggle');const nav=document.querySelector('.main-nav');
-const mobileStyle=document.createElement('style');mobileStyle.textContent='@media(max-width:950px){.main-nav.open{position:absolute;top:78px;left:0;right:0;background:#111;padding:18px 6vw;display:flex;flex-direction:column;align-items:stretch;border-bottom:1px solid #393632}.main-nav.open a:not(.nav-cta){display:block;padding:12px 0;border-bottom:1px solid #292725}.main-nav.open .nav-cta{margin-top:12px;text-align:center}}';document.head.appendChild(mobileStyle);
-toggle?.addEventListener('click',()=>{const open=nav.classList.toggle('open');toggle.setAttribute('aria-expanded',open);toggle.textContent=open?'×':'☰';});
-document.querySelectorAll('.main-nav a').forEach(link=>link.addEventListener('click',()=>{nav.classList.remove('open');toggle?.setAttribute('aria-expanded','false');if(toggle)toggle.textContent='☰'}));
