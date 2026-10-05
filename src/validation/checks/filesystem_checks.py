@@ -9,13 +9,13 @@ REQUIRED_FILES = [
 ]
 
 
-def validate_filesystem() -> list[ValidationIssue]:
+def validate_filesystem(website_root=WEBSITE_ROOT) -> list[ValidationIssue]:
 
     errors: list[ValidationIssue] = []
 
     for filename in REQUIRED_FILES:
 
-        file_path = WEBSITE_ROOT / filename
+        file_path = website_root / filename
 
         if not file_path.is_file():
 

@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from tools.filesystem_tools import WEBSITE_ROOT
 from state.project_state import ProjectState
 from context.context_builders import (
     build_ux_context,
