@@ -44,13 +44,19 @@ print(state.business)
 
 ux_input = build_ux_context(state)
 
-state.ux = run_agent(
+ux_result = run_agent(
     agent=UX_AGENT,
     user_input=ux_input
 )
 
-print("\nWebsite Structure:")
-print(state.ux)
+state.ux = ux_result.structure
+state.capability_plan = ux_result.capability_plan
+
+print("\n=== WEBSITE STRUCTURE ===")
+print(state.ux.model_dump_json(indent=2))
+
+print("\n=== CAPABILITY PLAN ===")
+print(state.capability_plan.model_dump_json(indent=2))
 
 # ============================================================
 # COPY AGENT

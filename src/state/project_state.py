@@ -7,6 +7,7 @@ from agents.design_agent import DesignSpec
 from agents.developer_agent import DevelopmentResult
 from validation.validator import ValidationResult
 from specs.website_spec import WebsiteSpec
+from specs.capability_spec import CapabilityPlan
 
 
 class ProjectState(BaseModel):
@@ -17,5 +18,6 @@ class ProjectState(BaseModel):
     website_spec: WebsiteSpec | None = None
     development: DevelopmentResult | None = None
     validation: ValidationResult | None = None
+    capability_plan: CapabilityPlan | None = None
 
 
