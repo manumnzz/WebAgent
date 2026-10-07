@@ -21,9 +21,32 @@ from validation.validator import validate_website
 
 state = ProjectState()
 
+state.capability_inputs.whatsapp_number = (
+    "+34 612 345 678"
+)
+
+state.capability_inputs.business_address = (
+    "Calle Sierpes 15, Sevilla"
+)
+
 business_description = """
-Quiero crear una página para Apex Barber Club.
-No tengo más información.
+Quiero crear una página web para Iron Garage Sevilla,
+un taller especializado en mantenimiento, mecánica rápida
+y personalización de coches.
+
+Ofrecemos cambios de aceite y filtros, frenos, neumáticos,
+suspensión, escapes, diagnosis electrónica y pequeñas
+modificaciones estéticas.
+
+El objetivo principal de la web es conseguir que los clientes
+contacten directamente por WhatsApp para pedir presupuesto
+o reservar una cita.
+
+También quiero que los clientes puedan localizar fácilmente
+el taller y abrir su ubicación en Google Maps.
+
+Quiero una estética moderna, agresiva y profesional,
+con un estilo inspirado en el mundo del motor.
 """
 
 # ============================================================

@@ -1,5 +1,8 @@
 from state.project_state import ProjectState
 import json
+from capabilities.capability_resolver import (
+    resolve_ready_capability_implementations,
+)
 
 def build_ux_context(state: ProjectState) -> str:
 
@@ -61,11 +64,28 @@ def build_developer_context(state: ProjectState) -> str:
 
     website_spec_json = state.website_spec.model_dump_json(indent=2)
 
+    implementations = (
+        resolve_ready_capability_implementations(
+            state.website_spec
+        )
+    )
+
+    implementations_json = json.dumps(
+        [
+            implementation.model_dump()
+            for implementation in implementations
+        ],
+        indent=2,
+    )
+
     return f"""
         MODE: generate
 
         WEBSITE_SPEC:
         {website_spec_json}
+
+        PREBUILT_CAPABILITY_IMPLEMENTATIONS:
+        {implementations_json}
     """
 
 def build_developer_repair_context(state: ProjectState) -> str:
@@ -84,11 +104,28 @@ def build_developer_repair_context(state: ProjectState) -> str:
 
     validation_json = state.validation.model_dump_json(indent=2)
 
+    implementations = (
+        resolve_ready_capability_implementations(
+            state.website_spec
+        )
+    )
+
+    implementations_json = json.dumps(
+        [
+            implementation.model_dump()
+            for implementation in implementations
+        ],
+        indent=2,
+    )
+
     return f"""
         MODE: repair
         
         WEBSITE_SPEC:
         {website_spec_json}
+
+        PREBUILT_CAPABILITY_IMPLEMENTATIONS:
+        {implementations_json}
 
         VALIDATION_RESULT:
         {validation_json}
