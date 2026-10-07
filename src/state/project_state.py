@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agents.business_agent import BusinessProfile
 from agents.ux_agent import WebsiteStructure
@@ -8,16 +8,21 @@ from agents.developer_agent import DevelopmentResult
 from validation.validator import ValidationResult
 from specs.website_spec import WebsiteSpec
 from specs.capability_spec import CapabilityPlan
+from capabilities.capability_inputs import CapabilityInputs
 
 
 class ProjectState(BaseModel):
     business: BusinessProfile | None = None
     ux: WebsiteStructure | None = None
+    capability_plan: CapabilityPlan | None = None
+    capability_inputs: CapabilityInputs = Field(
+        default_factory=CapabilityInputs
+    )
     website_copy: WebsiteCopy | None = None
     design: DesignSpec | None = None
     website_spec: WebsiteSpec | None = None
     development: DevelopmentResult | None = None
     validation: ValidationResult | None = None
-    capability_plan: CapabilityPlan | None = None
+    
 
 

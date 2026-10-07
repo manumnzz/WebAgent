@@ -32,6 +32,61 @@ Si WebsiteSpec contiene información o assets pendientes,
 no debes inventarlos. Implementa la web de forma que esas
 limitaciones queden respetadas.
 
+CAPABILITIES
+
+WEBSITE_SPEC puede contener una lista de capabilities que representan
+funcionalidades seleccionadas previamente para esta web.
+
+Las capabilities forman parte del contrato de implementación.
+No vuelvas a decidir si son adecuadas o necesarias.
+
+Para cada capability:
+
+- Respeta siempre su description y sus developer_requirements.
+
+- required=true indica que la capability es necesaria para cumplir
+  directamente el objetivo principal del negocio.
+
+- required=false indica que la capability mejora la experiencia,
+  pero no es imprescindible.
+
+- ready indica si WebAgent dispone actualmente de todos los inputs
+  necesarios para implementar funcionalmente la capability.
+
+- missing_inputs indica qué configuración o recursos faltan.
+
+- input_values contiene únicamente los inputs reales disponibles
+  para esa capability.
+
+REGLAS DE IMPLEMENTACIÓN:
+
+- Si ready=true, puedes implementar funcionalmente la capability
+  utilizando únicamente los datos presentes en input_values y
+  respetando developer_requirements.
+
+- Si ready=false, no simules que la capability funciona.
+
+- Una capability con ready=false no debe contener formularios,
+  botones activos, calendarios, enlaces ni otros controles que hagan
+  creer al usuario que puede completar realmente esa funcionalidad.
+
+- Si ready=false, conserva cuando tenga sentido la presencia visual
+  o estructural de la funcionalidad, pero represéntala como pendiente,
+  no disponible o preparada para una futura integración.
+
+- required=true nunca autoriza a inventar datos, URLs, proveedores,
+  APIs, disponibilidad, identificadores o configuración.
+
+- Si una indicación de layout de una sección entra en conflicto con
+  ready=false, la información de readiness tiene prioridad para el
+  comportamiento funcional. Conserva la intención visual de la sección,
+  pero degrada la interacción de forma segura.
+
+- No añadas capabilities que no estén incluidas en WEBSITE_SPEC.
+
+- Indica en implementation_notes las capabilities seleccionadas que
+  no hayan podido activarse porque ready=false.
+
 Cuando termines, devuelve un DevelopmentResult indicando:
 - archivos creados;
 - archivos modificados;

@@ -2,7 +2,13 @@ from state.project_state import ProjectState
 
 from specs.website_spec import (
     WebsiteSpec,
-    WebsiteSectionSpec
+    WebsiteSectionSpec,
+    WebsiteCapabilitySpec
+)
+
+from capabilities.capability_registry import get_capability_definition
+from capabilities.capability_readiness import (
+    evaluate_capability_readiness,
 )
 
 def build_website_spec(state: ProjectState) -> WebsiteSpec:
@@ -15,6 +21,11 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
     if state.ux is None:
         raise ValueError(
             "No se puede construir WebsiteSpec: falta state.ux."
+        )
+
+    if state.capability_plan is None:
+        raise ValueError(
+            "No se puede construir WebsiteSpec: falta state.capability_plan."
         )
 
     if state.website_copy is None:
@@ -78,6 +89,44 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
 
         sections.append(section_spec)
 
+    capabilities = []
+
+    for capability in state.capability_plan.capabilities:
+
+        definition = get_capability_definition(
+            capability.type
+        )
+
+        readiness = evaluate_capability_readiness(
+            definition,
+            state.capability_inputs,
+        )
+
+        all_input_values = state.capability_inputs.model_dump()
+
+        input_values = {
+            required_input: all_input_values[required_input]
+            for required_input in definition.required_inputs
+            if all_input_values.get(required_input)
+        }
+
+        capability_spec = WebsiteCapabilitySpec(
+            type=capability.type,
+            required=capability.required,
+            reason=capability.reason,
+
+            description=definition.description,
+
+            required_inputs=definition.required_inputs,
+            ready=readiness.ready,
+            missing_inputs=readiness.missing_inputs,
+            input_values=input_values,
+
+            developer_requirements=definition.developer_requirements,
+        )
+
+        capabilities.append(capability_spec)
+
     return WebsiteSpec(
         business=state.business,
 
@@ -89,6 +138,8 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
         typography_direction=state.design.typography_direction,
 
         sections=sections,
+
+        capabilities=capabilities,
 
         missing_content=state.ux.missing_content,
         missing_information=state.design.missing_information,
