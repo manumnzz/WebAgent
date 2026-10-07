@@ -1,310 +1,430 @@
 # WebAgent
 
-WebAgent es un proyecto de aprendizaje y desarrollo de un sistema de agentes de IA capaz de transformar la información de un pequeño negocio en una web profesional con la mínima intervención manual posible.
+WebAgent es un sistema multiagente en desarrollo que transforma la información de un pequeño negocio en una web profesional, funcional y validada con la mínima intervención manual posible.
 
-El objetivo principal del proyecto no es empezar usando un framework agentic, sino **entender y construir manualmente los mecanismos básicos de un agente** —contexto, structured outputs, tools, tool calling, agent loops, estado y guardrails— para poder abstraerlos más adelante con criterio.
+El proyecto nació con un objetivo didáctico muy concreto: **entender y construir desde cero los mecanismos que hacen funcionar un sistema agentic** —structured outputs, tools, tool calling, estado compartido, validación, repair loops y coordinación entre agentes— antes de delegar esas decisiones a frameworks de alto nivel.
 
-## Estado actual
+Actualmente WebAgent ya genera webs completas mediante un pipeline multiagente, valida automáticamente el resultado y está incorporando un sistema de **capabilities reutilizables** para que funcionalidades conocidas puedan resolverse con código determinista en lugar de regenerarse con un LLM en cada ejecución.
 
-Actualmente el proyecto se encuentra en una fase temprana y didáctica. Ya existe un primer `BusinessAgent` capaz de:
+> **Estado:** desarrollo activo. El proyecto todavía no está planteado como producto estable para producción.
 
-- Recibir instrucciones y una descripción libre de un negocio.
-- Producir un `BusinessProfile` estructurado con Pydantic.
-- Decidir si necesita utilizar herramientas.
-- Solicitar cero, una o varias tools en una inferencia.
-- Permitir que Python ejecute las tools reales.
-- Incorporar sus resultados al contexto mediante `function_call_output`.
-- Repetir el ciclo dentro de un Agent Loop con límite de pasos.
-- Finalizar cuando dispone de información suficiente.
-- Resolver las tools mediante un `Tool Registry` y un `Tool Executor` genéricos.
-- Mantener `TOOL_SPECS` como única fuente de verdad de las herramientas disponibles.
+---
 
-En la prueba actual, el modelo fue capaz de solicitar `search_business` y `search_business_preferences` en el mismo paso y completar el `BusinessProfile` en la siguiente inferencia.
+## Qué hace WebAgent
 
-> Nota: aunque el modelo puede solicitar varias tools en una misma inferencia, por ahora Python las ejecuta secuencialmente dentro del loop.
+A partir de una descripción inicial de un negocio, WebAgent puede:
+
+- Extraer un perfil estructurado del negocio.
+- Diseñar la arquitectura UX de la web.
+- Seleccionar las funcionalidades necesarias para cumplir el objetivo del negocio.
+- Generar el copy de cada sección.
+- Definir dirección visual, layout y requisitos de assets.
+- Consolidar toda la información en un `WebsiteSpec` estructurado.
+- Generar `HTML`, `CSS` y `JavaScript` mediante un DeveloperAgent con acceso controlado al filesystem.
+- Validar de forma determinista la web generada.
+- Reparar automáticamente errores detectados por el Validator.
+- Integrar capabilities funcionales reutilizables sin regenerar su lógica desde cero.
+
+---
 
 ## Arquitectura actual
 
 ```mermaid
 flowchart TD
-    U[User input] --> BA[BusinessAgent]
-    BA --> M[LLM]
-    M -->|function_call| L[Agent Loop]
-    L --> E[Tool Executor]
-    E --> R[Tool Registry]
-    R --> T[Python Tool]
-    T --> O[function_call_output]
-    O --> M
-    M -->|final output| BP[BusinessProfile]
+    A[User Input] --> B[BusinessAgent]
+    B --> C[BusinessProfile]
 
-    S[TOOL_SPECS] --> D[get_tool_definitions]
-    D --> M
-    S --> R
+    C --> D[UXAgent]
+    D --> E[WebsiteStructure]
+    D --> F[CapabilityPlan]
+
+    C --> G[CopyAgent]
+    E --> G
+    G --> H[WebsiteCopy]
+
+    C --> I[DesignAgent]
+    E --> I
+    I --> J[DesignSpec]
+
+    F --> K[Capability Registry]
+    K --> L[Readiness Evaluation]
+    L --> M[Capability Implementations]
+
+    C --> N[WebsiteSpec Builder]
+    E --> N
+    H --> N
+    J --> N
+    F --> N
+    L --> N
+
+    N --> O[WebsiteSpec]
+    M --> P[Developer Context]
+    O --> P
+
+    P --> Q[DeveloperAgent]
+    Q --> R[Generated Website]
+
+    R --> S[Deterministic Validator]
+    S -->|valid| T[Final Website]
+    S -->|errors| U[Developer Repair]
+    U --> S
 ```
 
-La idea central es mantener separadas estas responsabilidades:
+La arquitectura intenta mantener responsabilidades muy claras:
 
-- **LLM:** decide qué necesita hacer.
-- **Agent Loop:** coordina el ciclo observar -> decidir -> actuar -> observar.
-- **TOOL_SPECS:** catálogo y única fuente de verdad de las tools.
-- **Tool Registry:** índice `nombre -> función` derivado de `TOOL_SPECS`.
-- **Tool Executor:** ejecuta una tool genéricamente a partir de su nombre y argumentos.
-- **Python tools:** implementan las acciones reales.
+- **Los agentes** toman decisiones que requieren razonamiento o generación.
+- **Python** ejecuta acciones, mantiene estado, resuelve lógica conocida y aplica guardrails.
+- **Pydantic** define contratos entre etapas.
+- **El Validator** comprueba errores técnicos sin utilizar un LLM.
+- **Las capabilities** encapsulan funcionalidades reutilizables que WebAgent ya sabe implementar.
 
-## Flujo del BusinessAgent
+---
+
+## Agentes
+
+### BusinessAgent
+
+Analiza la descripción inicial del negocio y devuelve un `BusinessProfile` estructurado.
+
+Actualmente puede utilizar tools mediante un agent loop genérico y un sistema de permisos por agente.
+
+### UXAgent
+
+Convierte el perfil del negocio en una estructura de navegación y secciones, y selecciona las capabilities necesarias mediante un `CapabilityPlan`.
+
+### CopyAgent
+
+Genera el contenido textual de cada sección sin inventar datos factuales. Cuando falta información necesaria, lo refleja explícitamente en su salida estructurada.
+
+### DesignAgent
+
+Define dirección visual, paleta, tipografía, layouts y requisitos de assets sin modificar el contenido factual del negocio.
+
+### DeveloperAgent
+
+Transforma el `WebsiteSpec` en una implementación web real utilizando tools de filesystem.
+
+Dispone actualmente de dos modos:
+
+- `generate`: genera la primera versión de la web.
+- `repair`: corrige exclusivamente los errores detectados por el Validator.
+
+El DeveloperAgent también recibe las `PREBUILT_CAPABILITY_IMPLEMENTATIONS` disponibles para integrar funcionalidades ya resueltas por WebAgent sin volver a generar su lógica.
+
+---
+
+## Shared State y WebsiteSpec
+
+El workflow se coordina mediante un `ProjectState` que almacena progresivamente los resultados de cada fase:
 
 ```text
-USER
-  |
-  v
-BUSINESS AGENT
-  |
-  v
-LLM
-  |
-  +--> salida final ------------------------> BusinessProfile
-  |
-  +--> function_call
-          |
-          v
-      Tool Executor
-          |
-          v
-      Tool Registry
-          |
-          v
-       Python Tool
-          |
-          v
-   function_call_output
-          |
-          +-------------------------------> LLM
+ProjectState
+├── business
+├── ux
+├── capability_plan
+├── capability_inputs
+├── website_copy
+├── design
+├── website_spec
+├── development
+└── validation
 ```
 
-## BusinessProfile
+Antes del desarrollo, WebAgent consolida la información necesaria en un `WebsiteSpec`.
 
-El contrato de salida actual es:
+Esto evita que el DeveloperAgent tenga que reconstruir decisiones tomadas anteriormente y reduce el acoplamiento entre agentes.
 
-```python
-class BusinessProfile(BaseModel):
-    name: str | None
-    business_type: str
-    location: str | None
-    services: list[str]
-    main_goal: str | None
-    desired_style: list[str]
-```
+---
 
-La salida estructurada permite que futuros agentes consuman información estable sin depender de texto libre.
+## Sistema de Capabilities
 
-## Sistema de Tools
+Una capability representa una funcionalidad reutilizable que una web puede necesitar: WhatsApp, mapas, reservas, formularios, galerías, analítica, etc.
 
-Cada tool tiene dos caras:
-
-1. Una `definition`, que describe al modelo el nombre, propósito y argumentos disponibles.
-2. Un `handler`, que apunta a la función Python que ejecuta realmente la acción.
-
-Ambas se registran en `TOOL_SPECS`:
-
-```python
-TOOL_SPECS = [
-    {
-        "definition": SEARCH_BUSINESS_DEFINITION,
-        "handler": search_business,
-    },
-    {
-        "definition": SEARCH_BUSINESS_PREFERENCES_DEFINITION,
-        "handler": search_business_preferences,
-    },
-]
-```
-
-A partir de este catálogo se construyen las dos estructuras que necesita el sistema:
-
-```python
-def get_tool_definitions():
-    return [
-        spec["definition"]
-        for spec in TOOL_SPECS
-    ]
-
-
-TOOL_REGISTRY = {
-    spec["definition"]["name"]: spec["handler"]
-    for spec in TOOL_SPECS
-}
-```
-
-El Agent Loop no necesita conocer ninguna tool concreta:
-
-```python
-arguments = json.loads(item.arguments)
-
-result = execute_tool(
-    tool_name=item.name,
-    arguments=arguments,
-)
-```
-
-Esto permite añadir nuevas herramientas sin introducir nuevos `if/elif` en `main.py`.
-
-## Tools implementadas
-
-### `search_business`
-
-Busca información básica conocida sobre un negocio, como nombre, tipo, ubicación y servicios.
-
-### `search_business_preferences`
-
-Busca información adicional sobre el objetivo principal del negocio y sus preferencias de estilo.
-
-Actualmente ambas utilizan bases de datos locales simuladas para poder estudiar el mecanismo de tool calling sin añadir todavía búsquedas web, APIs externas o fallos de red.
-
-## Estructura actual
+La arquitectura separa cuatro conceptos:
 
 ```text
-WebAgent/
-|-- .env
-|-- .gitignore
-|-- requirements.txt
-|
-`-- src/
-    |-- main.py
-    |
-    `-- tools/
-        |-- business_tools.py
-        `-- tool_registry.py
+CapabilityPlan
+      ↓
+CapabilityDefinition
+      ↓
+CapabilityReadiness
+      ↓
+CapabilityImplementation
 ```
 
-La estructura se mantiene deliberadamente pequeña. Se introducirán nuevas carpetas y abstracciones cuando exista una necesidad real.
+### CapabilityDefinition
+
+Describe:
+
+- qué hace la capability;
+- qué inputs necesita;
+- qué requisitos debe respetar el DeveloperAgent.
+
+### CapabilityReadiness
+
+Comprueba si WebAgent dispone de los datos necesarios para activar una capability.
+
+Ejemplo:
+
+```text
+whatsapp
+required_inputs = ["whatsapp_number"]
+
+whatsapp_number disponible
+        ↓
+ready = true
+```
+
+Si faltan datos, la capability se mantiene como `ready=false` y WebAgent no simula una funcionalidad que realmente no puede ejecutar.
+
+### CapabilityImplementation
+
+Contiene código funcional reutilizable:
+
+```python
+class CapabilityImplementation(BaseModel):
+    type: CapabilityType
+    html: str
+    css: str
+    javascript: str
+    implementation_notes: list[str]
+```
+
+El DeveloperAgent recibe estas implementaciones ya construidas y se encarga de **integrarlas visualmente**, no de reinventar su comportamiento.
+
+### Implementaciones actuales
+
+- [x] WhatsApp (`wa.me`)
+- [x] Google Maps
+- [ ] Contact form
+- [ ] Gallery
+- [ ] Reviews
+- [ ] Booking
+- [ ] Analytics
+
+WhatsApp y Maps ya han sido probadas conjuntamente en una generación end-to-end y funcionan correctamente en la web final.
+
+---
+
+## Tools y Agent Loop
+
+Los agentes no ejecutan funciones directamente. Solicitan tools y Python decide si están permitidas y cómo ejecutarlas.
+
+Cada tool tiene:
+
+- una `definition` visible para el modelo;
+- un `handler` Python que realiza la acción real.
+
+Ambas caras se unen en `TOOL_SPECS`, del que se deriva el `TOOL_REGISTRY`.
+
+```text
+Agent
+  ↓
+function_call
+  ↓
+Tool Executor
+  ↓
+Tool Registry
+  ↓
+Python handler
+  ↓
+function_call_output
+  ↓
+Agent
+```
+
+El `AgentRunner` es genérico y no conoce tools concretas. Cada `AgentConfig` define su modelo, instrucciones, tools permitidas y schema de salida.
+
+---
+
+## Validator determinista
+
+Después de generar la web, WebAgent ejecuta un Validator escrito en Python.
+
+Actualmente comprueba, entre otros aspectos:
+
+- existencia y contenido de archivos requeridos;
+- estructura HTML;
+- referencias a stylesheets;
+- IDs HTML duplicados;
+- enlaces internos rotos;
+- errores básicos de CSS;
+- errores básicos de JavaScript.
+
+Si la web no es válida:
+
+```text
+Validator
+   ↓
+ValidationResult
+   ↓
+DeveloperAgent / MODE: repair
+   ↓
+Validator
+```
+
+El número de intentos de reparación está limitado para evitar loops infinitos.
+
+---
+
+## Estructura del proyecto
+
+```text
+src/
+├── agents/
+│   ├── agent_config.py
+│   ├── agent_runner.py
+│   ├── business_agent.py
+│   ├── ux_agent.py
+│   ├── copy_agent.py
+│   ├── design_agent.py
+│   └── developer_agent.py
+│
+├── capabilities/
+│   ├── capability_inputs.py
+│   ├── capability_readiness.py
+│   ├── capability_registry.py
+│   ├── capability_implementation.py
+│   ├── capability_resolver.py
+│   ├── implementation_registry.py
+│   └── implementations/
+│       ├── whatsapp.py
+│       └── maps.py
+│
+├── context/
+│   └── context_builders.py
+│
+├── specs/
+│   ├── capability_spec.py
+│   ├── website_spec.py
+│   └── website_spec_builder.py
+│
+├── state/
+│   └── project_state.py
+│
+├── tools/
+│   ├── business_tools.py
+│   ├── filesystem_tools.py
+│   └── tool_registry.py
+│
+├── validation/
+├── tests/
+└── main.py
+```
+
+---
 
 ## Instalación
 
-### 1. Crear un entorno virtual
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/manumnzz/WebAgent.git
+cd WebAgent
+```
+
+### 2. Crear y activar un entorno virtual
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 2. Instalar dependencias
+En Windows:
 
 ```bash
-pip install openai python-dotenv pydantic
+.venv\Scripts\activate
 ```
 
-También se puede mantener un `requirements.txt` y ejecutar:
+### 3. Instalar dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configurar la API key
+### 4. Configurar credenciales
 
-Crear un fichero `.env` en la raíz:
+Crear un archivo `.env` en la raíz del proyecto:
 
 ```env
 OPENAI_API_KEY=tu_api_key
 ```
 
-El fichero `.env` debe permanecer fuera de Git mediante `.gitignore`.
+`.env` no debe subirse al repositorio.
 
-### 4. Ejecutar
-
-Desde la raíz del proyecto:
+### 5. Ejecutar WebAgent
 
 ```bash
 python src/main.py
 ```
 
+### 6. Ejecutar los tests
+
+```bash
+pytest
+```
+
+---
+
 ## Principios de diseño
 
-- Primero entender el mecanismo; después utilizar frameworks que lo automaticen.
-- El modelo decide **qué** acción necesita; Python decide **cómo** se ejecuta.
-- Una tool call no ejecuta una función por sí sola.
-- El software mantiene el control de qué acciones existen y están permitidas.
-- Los outputs entre componentes deben ser estructurados siempre que sea razonable.
-- El Agent Loop no debe conocer implementaciones concretas de tools.
-- `TOOL_SPECS` es la única fuente de verdad del catálogo de herramientas.
-- La lógica determinista debe resolverse con software tradicional siempre que sea posible.
-- Los loops deben tener límites explícitos como `MAX_STEPS`.
-- La complejidad arquitectónica se añade cuando aparece una necesidad real.
+WebAgent sigue varias reglas arquitectónicas que guían su evolución:
+
+1. **No utilizar un LLM para resolver lógica que puede ser determinista.**
+2. **Mantener contratos estructurados entre componentes.**
+3. **Separar decisión, ejecución y validación.**
+4. **Evitar lógica específica distribuida mediante registries y resolvers genéricos.**
+5. **No inventar información del negocio cuando faltan datos.**
+6. **Limitar explícitamente loops y procesos de reparación.**
+7. **Añadir abstracciones solo cuando resuelven un problema real.**
+8. **Medir coste y calidad antes de optimizar modelos.**
+
+---
 
 ## Roadmap
 
-### Completado
+El backlog activo se gestiona mediante GitHub Issues.
 
-- [x] Primera inferencia desde Python.
-- [x] Context Engineering con roles.
-- [x] Structured Output con Pydantic.
-- [x] Primera tool real.
-- [x] Tool calling.
-- [x] `function_call_output`.
-- [x] Agent Loop con límite de pasos.
-- [x] Tool Registry.
-- [x] Tool Executor genérico.
-- [x] `TOOL_SPECS` como fuente de verdad.
-- [x] Múltiples tools reales.
-- [x] Múltiples tool calls en una inferencia.
+### En progreso
 
-### Próximos pasos
+- [#2 — Completar sistema de capabilities reutilizables](https://github.com/manumnzz/WebAgent/issues/2)
 
-- [ ] Permisos y selección de tools por agente.
-- [ ] Guardrails por agente.
-- [ ] Shared State.
-- [ ] Persistencia.
-- [ ] Logging y observabilidad.
-- [ ] ResearchAgent.
-- [ ] UXAgent.
-- [ ] CopyAgent.
-- [ ] DesignAgent.
-- [ ] DeveloperAgent.
-- [ ] Validator determinista.
-- [ ] Orquestación multiagente.
-- [ ] Comparación SLM vs. LLM por responsabilidad.
-- [ ] Evaluación de frameworks como LangGraph, CrewAI o LangChain cuando sus abstracciones aporten valor real.
+### Próximos objetivos
 
-## Arquitectura objetivo provisional
+- [#3 — Optimizar agentes con SLM/LLM routing y control de costes](https://github.com/manumnzz/WebAgent/issues/3)
+- [#4 — Implementar recolección automática de información faltante](https://github.com/manumnzz/WebAgent/issues/4)
+- [#5 — Implementar recolección y gestión de multimedia](https://github.com/manumnzz/WebAgent/issues/5)
+- [#6 — Añadir revisión humana y modo `revise` al DeveloperAgent](https://github.com/manumnzz/WebAgent/issues/6)
 
-```text
-USER INPUT
-    |
-    v
-BUSINESS AGENT
-    |\
-    | \-- info insuficiente --> RESEARCH AGENT
-    |
-    v
-UX AGENT
-    |
-    +-------------------+
-    |                   |
-    v                   v
-COPY AGENT          DESIGN AGENT
-    |                   |
-    +---------+---------+
-              |
-              v
-         WebsiteSpec
-              |
-              v
-      DEVELOPER AGENT
-              |
-              v
-          VALIDATOR
-          /       \
-      válido      errores
-        |            |
-        v            v
-  HUMAN REVIEW   Developer repair
-                     |
-                     +----> Validator
-```
+### Mejoras detectadas
 
-Esta arquitectura es provisional y se irá refinando según aparezcan dependencias y necesidades reales.
+- [#1 — Controlar placement y duplicación de capabilities en la web final](https://github.com/manumnzz/WebAgent/issues/1)
+
+---
+
+## Dirección técnica
+
+Las siguientes líneas de evolución están previstas para las próximas iteraciones:
+
+- completar el catálogo de capabilities;
+- obtener automáticamente información pública que falte en el input inicial;
+- recolectar y gestionar fotografías, logos y otros assets del negocio;
+- incorporar una fase de revisión humana posterior a la validación técnica;
+- medir tokens, latencia y coste por agente;
+- asignar modelos más pequeños a tareas simples y reservar modelos más potentes para desarrollo y reparación compleja;
+- mantener el máximo número posible de tareas en código determinista.
+
+---
 
 ## Filosofía del proyecto
 
-WebAgent se está construyendo de forma incremental. La prioridad es poder explicar por qué existe cada componente y qué problema resuelve antes de introducir una nueva abstracción.
+WebAgent se construye de forma incremental y deliberada.
 
-La meta no es acumular agentes, tools o frameworks, sino diseñar un sistema donde cada pieza tenga una responsabilidad concreta, un contrato claro y un comportamiento observable.
+El objetivo no es acumular agentes, prompts o frameworks, sino crear un sistema donde cada componente tenga:
+
+- una responsabilidad concreta;
+- un contrato explícito;
+- una razón clara para existir;
+- un comportamiento observable y testeable.
+
+La prioridad es entender la arquitectura y poder justificar cada decisión técnica antes de abstraerla.
