@@ -4,7 +4,7 @@ WebAgent es un sistema multiagente en desarrollo que transforma la información 
 
 El proyecto nació con un objetivo didáctico muy concreto: **entender y construir desde cero los mecanismos que hacen funcionar un sistema agentic** —structured outputs, tools, tool calling, estado compartido, validación, repair loops y coordinación entre agentes— antes de delegar esas decisiones a frameworks de alto nivel.
 
-Actualmente WebAgent ya genera webs completas mediante un pipeline multiagente, valida automáticamente el resultado y está incorporando un sistema de **capabilities reutilizables** para que funcionalidades conocidas puedan resolverse con código determinista en lugar de regenerarse con un LLM en cada ejecución.
+Actualmente WebAgent ya genera webs completas mediante un pipeline multiagente, valida automáticamente el resultado e integra **capabilities reutilizables** para resolver funcionalidades conocidas mediante código determinista en lugar de regenerarlas con un LLM en cada ejecución.
 
 > **Estado:** desarrollo activo. El proyecto todavía no está planteado como producto estable para producción.
 
@@ -15,8 +15,10 @@ Actualmente WebAgent ya genera webs completas mediante un pipeline multiagente, 
 A partir de una descripción inicial de un negocio, WebAgent puede:
 
 - Extraer un perfil estructurado del negocio.
+- Conservar datos de contacto e intenciones explícitas del usuario sin perder información entre etapas.
 - Diseñar la arquitectura UX de la web.
 - Seleccionar las funcionalidades necesarias para cumplir el objetivo del negocio.
+- Resolver automáticamente inputs de capabilities a partir de datos ya conocidos del negocio.
 - Generar el copy de cada sección.
 - Definir dirección visual, layout y requisitos de assets.
 - Consolidar toda la información en un `WebsiteSpec` estructurado.
@@ -38,36 +40,40 @@ flowchart TD
     D --> E[WebsiteStructure]
     D --> F[CapabilityPlan]
 
-    C --> G[CopyAgent]
-    E --> G
-    G --> H[WebsiteCopy]
+    C --> G[Capability Input Resolver]
+    G --> H[CapabilityInputs]
 
-    C --> I[DesignAgent]
+    C --> I[CopyAgent]
     E --> I
-    I --> J[DesignSpec]
+    I --> J[WebsiteCopy]
 
-    F --> K[Capability Registry]
-    K --> L[Readiness Evaluation]
-    L --> M[Capability Implementations]
+    C --> K[DesignAgent]
+    E --> K
+    K --> L[DesignSpec]
 
-    C --> N[WebsiteSpec Builder]
-    E --> N
-    H --> N
-    J --> N
-    F --> N
-    L --> N
+    F --> M[Capability Registry]
+    H --> N[Readiness Evaluation]
+    M --> N
+    N --> O[Capability Implementations]
 
-    N --> O[WebsiteSpec]
-    M --> P[Developer Context]
-    O --> P
+    C --> P[WebsiteSpec Builder]
+    E --> P
+    J --> P
+    L --> P
+    F --> P
+    H --> P
 
-    P --> Q[DeveloperAgent]
-    Q --> R[Generated Website]
+    P --> Q[WebsiteSpec]
+    O --> R[Developer Context]
+    Q --> R
 
-    R --> S[Deterministic Validator]
-    S -->|valid| T[Final Website]
-    S -->|errors| U[Developer Repair]
-    U --> S
+    R --> S[DeveloperAgent]
+    S --> T[Generated Website]
+
+    T --> U[Deterministic Validator]
+    U -->|valid| V[Final Website]
+    U -->|errors| W[Developer Repair]
+    W --> U
 ```
 
 La arquitectura intenta mantener responsabilidades muy claras:
@@ -85,6 +91,13 @@ La arquitectura intenta mantener responsabilidades muy claras:
 ### BusinessAgent
 
 Analiza la descripción inicial del negocio y devuelve un `BusinessProfile` estructurado.
+
+Además de los datos básicos del negocio, actualmente conserva:
+
+- `requested_features`: funcionalidades, canales o características solicitadas explícitamente por el usuario;
+- `contact`: teléfono, WhatsApp, email y dirección cuando están disponibles.
+
+Esto evita pérdida de información entre etapas. El BusinessAgent no selecciona capabilities ni toma decisiones técnicas: preserva la intención y los datos factuales.
 
 Actualmente puede utilizar tools mediante un agent loop genérico y un sistema de permisos por agente.
 
@@ -136,16 +149,56 @@ Esto evita que el DeveloperAgent tenga que reconstruir decisiones tomadas anteri
 
 ---
 
+## Preservación y resolución de información
+
+Durante el desarrollo se detectó un problema importante: si el schema de salida de un agente no representa una información necesaria para etapas posteriores, esa información desaparece del pipeline.
+
+Para evitarlo, `BusinessProfile` conserva ahora tanto los datos factuales relevantes como las funcionalidades solicitadas explícitamente.
+
+Ejemplo:
+
+```text
+"Quiero una galería"
+        ↓
+BusinessProfile.requested_features
+        ↓
+UXAgent
+        ↓
+CapabilityPlan: gallery
+```
+
+Mientras que los datos concretos utilizados por una capability siguen una ruta separada:
+
+```text
+BusinessProfile.contact.whatsapp
+        ↓
+Capability Input Resolver
+        ↓
+CapabilityInputs.whatsapp_number
+```
+
+El `Capability Input Resolver` traduce actualmente datos conocidos del negocio a inputs reutilizables:
+
+- `contact.whatsapp` → `whatsapp_number`
+- `contact.email` → `contact_destination`
+- `contact.address` → `business_address`
+
+Además conserva inputs ya existentes, permitiendo que en el futuro otras fuentes —por ejemplo un Media Collector o un Information Collector— completen `CapabilityInputs` sin perder datos previos.
+
+---
+
 ## Sistema de Capabilities
 
-Una capability representa una funcionalidad reutilizable que una web puede necesitar: WhatsApp, mapas, reservas, formularios, galerías, analítica, etc.
+Una capability representa una funcionalidad reutilizable que una web puede necesitar: WhatsApp, mapas, reservas, formularios, galerías, reseñas, analítica, etc.
 
-La arquitectura separa cuatro conceptos:
+La arquitectura separa varios conceptos:
 
 ```text
 CapabilityPlan
       ↓
 CapabilityDefinition
+      ↓
+CapabilityInputs
       ↓
 CapabilityReadiness
       ↓
@@ -159,6 +212,12 @@ Describe:
 - qué hace la capability;
 - qué inputs necesita;
 - qué requisitos debe respetar el DeveloperAgent.
+
+### CapabilityInputs
+
+Contiene únicamente los datos reales disponibles para activar funcionalidades concretas.
+
+Algunos inputs ya están tipados con modelos específicos, por ejemplo `ReviewData`, mientras que otros siguen pendientes de evolucionar según avance el sistema.
 
 ### CapabilityReadiness
 
@@ -196,13 +255,35 @@ El DeveloperAgent recibe estas implementaciones ya construidas y se encarga de *
 
 - [x] WhatsApp (`wa.me`)
 - [x] Google Maps
-- [ ] Contact form
-- [ ] Gallery
-- [ ] Reviews
+- [x] Contact form
+- [x] Gallery
+- [x] Reviews
 - [ ] Booking
 - [ ] Analytics
 
-WhatsApp y Maps ya han sido probadas conjuntamente en una generación end-to-end y funcionan correctamente en la web final.
+Las cinco capabilities implementadas han sido probadas simultáneamente en una generación end-to-end y se integran correctamente en la misma web final.
+
+### Capabilities ya validadas
+
+#### WhatsApp
+
+Normaliza el número recibido y genera un enlace funcional mediante `wa.me`.
+
+#### Google Maps
+
+Construye una URL de Google Maps a partir de una dirección real del negocio.
+
+#### Contact form
+
+Genera una estructura de formulario funcional usando un destino de contacto real. Actualmente utiliza `mailto:` como primera implementación determinista, sin simular un backend inexistente.
+
+#### Gallery
+
+Recibe una colección de assets y genera HTML repetible para mostrarlos sin inventar fotografías del negocio.
+
+#### Reviews
+
+Utiliza `ReviewData` tipado con Pydantic y valida autor, texto y rating. Las valoraciones están restringidas al rango 1–5 y el contenido se escapa antes de insertarse en HTML.
 
 ---
 
@@ -281,15 +362,22 @@ src/
 │   └── developer_agent.py
 │
 ├── capabilities/
+│   ├── capability_input_resolver.py
 │   ├── capability_inputs.py
 │   ├── capability_readiness.py
 │   ├── capability_registry.py
 │   ├── capability_implementation.py
 │   ├── capability_resolver.py
 │   ├── implementation_registry.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   └── review.py
 │   └── implementations/
 │       ├── whatsapp.py
-│       └── maps.py
+│       ├── maps.py
+│       ├── contact_form.py
+│       ├── gallery.py
+│       └── reviews.py
 │
 ├── context/
 │   └── context_builders.py
@@ -375,9 +463,11 @@ WebAgent sigue varias reglas arquitectónicas que guían su evolución:
 3. **Separar decisión, ejecución y validación.**
 4. **Evitar lógica específica distribuida mediante registries y resolvers genéricos.**
 5. **No inventar información del negocio cuando faltan datos.**
-6. **Limitar explícitamente loops y procesos de reparación.**
-7. **Añadir abstracciones solo cuando resuelven un problema real.**
-8. **Medir coste y calidad antes de optimizar modelos.**
+6. **Preservar la información necesaria entre etapas mediante schemas explícitos.**
+7. **Separar intención del usuario de los datos técnicos necesarios para ejecutar una capability.**
+8. **Limitar explícitamente loops y procesos de reparación.**
+9. **Añadir abstracciones solo cuando resuelven un problema real.**
+10. **Medir coste y calidad antes de optimizar modelos.**
 
 ---
 
@@ -388,6 +478,21 @@ El backlog activo se gestiona mediante GitHub Issues.
 ### En progreso
 
 - [#2 — Completar sistema de capabilities reutilizables](https://github.com/manumnzz/WebAgent/issues/2)
+
+Estado actual del objetivo:
+
+- [x] WhatsApp
+- [x] Maps
+- [x] Contact form
+- [x] Gallery
+- [x] Reviews
+- [ ] Booking
+- [ ] Analytics
+- [ ] Prueba global final de todas las capabilities
+
+### Próximo paso inmediato
+
+Antes de implementar `Booking`, se definirá su arquitectura funcional: qué representa una reserva, dónde se almacena, cómo se gestiona su estado y cómo evitar acoplar WebAgent a un proveedor externo concreto.
 
 ### Próximos objetivos
 
@@ -406,7 +511,8 @@ El backlog activo se gestiona mediante GitHub Issues.
 
 Las siguientes líneas de evolución están previstas para las próximas iteraciones:
 
-- completar el catálogo de capabilities;
+- completar Booking y Analytics;
+- diseñar un sistema de reservas reutilizable antes de implementar Booking;
 - obtener automáticamente información pública que falte en el input inicial;
 - recolectar y gestionar fotografías, logos y otros assets del negocio;
 - incorporar una fase de revisión humana posterior a la validación técnica;
