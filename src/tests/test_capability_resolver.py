@@ -4,6 +4,10 @@ from capabilities.capability_resolver import (
     resolve_ready_capability_implementations,
 )
 
+from specs.website_spec import (
+    WebsiteCapabilitySpec,
+)
+
 
 def test_resolves_only_ready_capabilities():
 
@@ -26,6 +30,24 @@ def test_resolves_only_ready_capabilities():
     website_spec.capabilities = [
         ready_whatsapp,
         not_ready_whatsapp,
+        WebsiteCapabilitySpec(
+            type="gallery",
+            required=True,
+            reason="Mostrar trabajos del taller.",
+            description="Galería",
+            required_inputs=[
+                "gallery_assets",
+            ],
+            ready=True,
+            missing_inputs=[],
+            input_values={
+                "gallery_assets": [
+                    "assets/car.jpg",
+                    "assets/workshop.jpg",
+                ]
+            },
+            developer_requirements=[],
+        ),
     ]
 
     implementations = (
@@ -34,11 +56,26 @@ def test_resolves_only_ready_capabilities():
         )
     )
 
-    assert len(implementations) == 1
+    whatsapp = next(
+        implementation
+        for implementation in implementations
+        if implementation.type == "whatsapp"
+    )
 
-    assert implementations[0].type == "whatsapp"
+    gallery = next(
+        implementation
+        for implementation in implementations
+        if implementation.type == "gallery"
+    )
+
+    assert len(implementations) == 2
 
     assert (
         "34612345678"
-        in implementations[0].html
+        in whatsapp.html
+    )
+
+    assert (
+        gallery.html.count("<img")
+        == 2
     )

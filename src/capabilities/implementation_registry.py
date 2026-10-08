@@ -12,6 +12,15 @@ from capabilities.implementations.whatsapp import (
 from capabilities.implementations.maps import (
     build_maps_implementation,
 )
+from capabilities.implementations.contact_form import (
+    build_contact_form_implementation,
+)
+from capabilities.implementations.gallery import (
+    build_gallery_implementation,
+)
+from capabilities.implementations.reviews import (
+    build_reviews_implementation,
+)
 
 
 CapabilityBuilder = Callable[..., CapabilityImplementation]
@@ -21,7 +30,10 @@ CAPABILITY_IMPLEMENTATION_REGISTRY: dict[
     CapabilityBuilder,
 ] = {
     "whatsapp": build_whatsapp_implementation,
-    "maps": build_maps_implementation
+    "maps": build_maps_implementation,
+    "contact_form": build_contact_form_implementation,
+    "gallery": build_gallery_implementation,
+    "reviews": build_reviews_implementation,
 }
 
 def get_capability_implementation_builder(
@@ -49,4 +61,5 @@ def build_capability_implementation(
     )
 
     return builder(**input_values)
+
 

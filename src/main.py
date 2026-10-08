@@ -2,6 +2,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from capabilities.capability_input_resolver import (
+    resolve_business_capability_inputs,
+)
+from capabilities.models.review import (
+    ReviewData,
+)
 from tools.filesystem_tools import WEBSITE_ROOT
 from state.project_state import ProjectState
 from context.context_builders import (
@@ -21,13 +27,29 @@ from validation.validator import validate_website
 
 state = ProjectState()
 
-state.capability_inputs.whatsapp_number = (
-    "+34 612 345 678"
-)
+state.capability_inputs.gallery_assets = [
+    "https://placehold.co/800x600?text=Garage+1",
+    "https://placehold.co/800x600?text=Garage+2",
+    "https://placehold.co/800x600?text=Garage+3",
+]
 
-state.capability_inputs.business_address = (
-    "Calle Sierpes 15, Sevilla"
-)
+state.capability_inputs.review_data = [
+    ReviewData(
+        author="Carlos M.",
+        text="Muy buen trabajo con la suspensión del coche.",
+        rating=5,
+    ),
+    ReviewData(
+        author="Laura R.",
+        text="Buen trato y presupuesto claro desde el principio.",
+        rating=5,
+    ),
+    ReviewData(
+        author="David P.",
+        text="Me dejaron el coche perfecto.",
+        rating=4,
+    ),
+]
 
 business_description = """
 Quiero crear una página web para Iron Garage Sevilla,
@@ -42,8 +64,21 @@ El objetivo principal de la web es conseguir que los clientes
 contacten directamente por WhatsApp para pedir presupuesto
 o reservar una cita.
 
+Nuestro WhatsApp es +34 612 345 678.
+
+También quiero que puedan enviarnos consultas mediante
+un formulario de contacto. Nuestro email es
+contacto@irongarage.es.
+
 También quiero que los clientes puedan localizar fácilmente
 el taller y abrir su ubicación en Google Maps.
+La dirección es Calle Sierpes 15, Sevilla.
+
+También quiero una galería donde podamos enseñar fotografías
+del taller, de los coches y de algunos trabajos realizados.
+
+También quiero mostrar opiniones reales de clientes
+para transmitir confianza a nuevos visitantes.
 
 Quiero una estética moderna, agresiva y profesional,
 con un estilo inspirado en el mundo del motor.
@@ -60,6 +95,13 @@ state.business = run_agent(
 
 print("\nResultado final:")
 print(state.business)
+
+state.capability_inputs = (
+    resolve_business_capability_inputs(
+        state.business,
+        state.capability_inputs,
+    )
+)
 
 # ============================================================
 # UX AGENT

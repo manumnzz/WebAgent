@@ -54,3 +54,59 @@ def test_build_maps_from_input_values():
         "Calle+Sierpes+15%2C+Sevilla"
         in implementation.html
     )
+
+def test_get_contact_form_builder():
+
+    builder = get_capability_implementation_builder(
+        "contact_form"
+    )
+
+    implementation = builder(
+        contact_destination="contacto@irongarage.es"
+    )
+
+    assert implementation.type == "contact_form"
+
+    assert (
+        "contacto@irongarage.es"
+        in implementation.html
+    )
+
+def test_get_gallery_builder():
+
+    builder = get_capability_implementation_builder(
+        "gallery"
+    )
+
+    implementation = builder(
+        gallery_assets=[
+            "assets/car.jpg",
+            "assets/workshop.jpg",
+        ]
+    )
+
+    assert implementation.type == "gallery"
+
+    assert (
+        implementation.html.count("<img")
+        == 2
+    )
+
+def test_get_reviews_builder():
+
+    builder = get_capability_implementation_builder(
+        "reviews"
+    )
+
+    implementation = builder(
+        review_data=[
+            {
+                "author": "Carlos",
+                "text": "Trabajo excelente.",
+                "rating": 5,
+            }
+        ]
+    )
+
+    assert implementation.type == "reviews"
+    assert "Carlos" in implementation.html
