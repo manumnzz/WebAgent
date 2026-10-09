@@ -4,3 +4,7 @@ __pycache__/
 
 #Webs generadas por WebAgent
 /output
+
+# Google Calendar credentials
+credentials.json
+token.json

@@ -1,0 +1,83 @@
+{
+  "timezone": "Europe/Madrid",
+  "services": [
+    {
+      "id": "corte",
+      "name": "Corte",
+      "duration_minutes": 30
+    },
+    {
+      "id": "corte-barba",
+      "name": "Corte + barba",
+      "duration_minutes": 45
+    }
+  ],
+  "weekly_schedule": [
+    {
+      "weekday": "monday",
+      "ranges": [
+        {
+          "start": "09:00:00",
+          "end": "14:00:00"
+        },
+        {
+          "start": "16:00:00",
+          "end": "20:00:00"
+        }
+      ]
+    },
+    {
+      "weekday": "tuesday",
+      "ranges": [
+        {
+          "start": "09:00:00",
+          "end": "14:00:00"
+        },
+        {
+          "start": "16:00:00",
+          "end": "20:00:00"
+        }
+      ]
+    },
+    {
+      "weekday": "wednesday",
+      "ranges": [
+        {
+          "start": "09:00:00",
+          "end": "14:00:00"
+        },
+        {
+          "start": "16:00:00",
+          "end": "20:00:00"
+        }
+      ]
+    },
+    {
+      "weekday": "thursday",
+      "ranges": [
+        {
+          "start": "09:00:00",
+          "end": "14:00:00"
+        },
+        {
+          "start": "16:00:00",
+          "end": "20:00:00"
+        }
+      ]
+    },
+    {
+      "weekday": "friday",
+      "ranges": [
+        {
+          "start": "09:00:00",
+          "end": "14:00:00"
+        },
+        {
+          "start": "16:00:00",
+          "end": "20:00:00"
+        }
+      ]
+    }
+  ],
+  "slot_interval_minutes": 30
+}

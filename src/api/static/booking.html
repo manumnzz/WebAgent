@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservar cita</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+        }
+
+        .booking-container {
+            max-width: 600px;
+            margin: 60px auto;
+            padding: 32px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input,
+        select,
+        textarea,
+        button {
+            width: 100%;
+            padding: 12px;
+            font: inherit;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            border: 0;
+            cursor: pointer;
+            font-weight: 600;
+            background: #111;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 10px;
+        }
+
+        .slot {
+            background: #eee;
+            color: #222;
+        }
+
+        .slot.selected {
+            background: #111;
+            color: white;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 14px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .message.success {
+            display: block;
+            background: #e8f7ec;
+        }
+
+        .message.error {
+            display: block;
+            background: #fdeaea;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="booking-container">
+
+    <h1>Reserva tu cita</h1>
+
+    <div class="field">
+        <label for="service">Servicio</label>
+        <select id="service">
+            <option value="">Selecciona un servicio</option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label for="booking-date">Fecha</label>
+        <input
+            type="date"
+            id="booking-date"
+        >
+    </div>
+
+    <div class="field">
+        <label>Hora disponible</label>
+
+        <div
+            id="slots"
+            class="slots"
+        ></div>
+    </div>
+
+    <form id="booking-form">
+
+        <div class="field">
+            <label for="first-name">
+                Nombre
+            </label>
+
+            <input
+                id="first-name"
+                required
+            >
+        </div>
+
+        <div class="field">
+            <label for="last-name">
+                Apellidos
+            </label>
+
+            <input
+                id="last-name"
+                required
+            >
+        </div>
+
+        <div class="field">
+            <label for="email">
+                Email
+            </label>
+
+            <input
+                id="email"
+                type="email"
+            >
+        </div>
+
+        <div class="field">
+            <label for="phone">
+                Teléfono
+            </label>
+
+            <input
+                id="phone"
+                type="tel"
+            >
+        </div>
+
+        <div class="field">
+            <label for="notes">
+                Notas
+            </label>
+
+            <textarea
+                id="notes"
+                rows="3"
+            ></textarea>
+        </div>
+
+        <button type="submit">
+            Confirmar reserva
+        </button>
+
+    </form>
+
+    <div
+        id="message"
+        class="message"
+    ></div>
+
+</div>
+
+<script>
+
+    const serviceSelect =
+        document.getElementById("service");
+
+    const dateInput =
+        document.getElementById("booking-date");
+
+    const slotsContainer =
+        document.getElementById("slots");
+
+    const form =
+        document.getElementById("booking-form");
+
+    const message =
+        document.getElementById("message");
+
+    let selectedTime = null;
+
+
+    async function loadServices() {
+
+        const response = await fetch(
+            "/booking/services"
+        );
+
+        const services = await response.json();
+
+        for (const service of services) {
+
+            const option =
+                document.createElement("option");
+
+            option.value = service.id;
+
+            option.textContent =
+                `${service.name} (${service.duration_minutes} min)`;
+
+            serviceSelect.appendChild(option);
+        }
+    }
+
+
+    async function loadAvailability() {
+
+        selectedTime = null;
+        slotsContainer.innerHTML = "";
+
+        const serviceId =
+            serviceSelect.value;
+
+        const bookingDate =
+            dateInput.value;
+
+        if (!serviceId || !bookingDate) {
+            return;
+        }
+
+        const params =
+            new URLSearchParams({
+                service_id: serviceId,
+                booking_date: bookingDate,
+            });
+
+        const response = await fetch(
+            `/booking/availability?${params}`
+        );
+
+        if (!response.ok) {
+
+            showMessage(
+                "No se pudo consultar la disponibilidad.",
+                "error"
+            );
+
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.available_slots.length === 0) {
+
+            slotsContainer.textContent =
+                "No hay horarios disponibles.";
+
+            return;
+        }
+
+        for (const time of data.available_slots) {
+
+            const button =
+                document.createElement("button");
+
+            button.type = "button";
+            button.className = "slot";
+            button.textContent = time;
+
+            button.addEventListener(
+                "click",
+                () => selectSlot(button, time)
+            );
+
+            slotsContainer.appendChild(button);
+        }
+    }
+
+
+    function selectSlot(button, time) {
+
+        document
+            .querySelectorAll(".slot")
+            .forEach(
+                slot =>
+                    slot.classList.remove(
+                        "selected"
+                    )
+            );
+
+        button.classList.add("selected");
+
+        selectedTime = time;
+    }
+
+
+    function showMessage(text, type) {
+
+        message.textContent = text;
+
+        message.className =
+            `message ${type}`;
+    }
+
+
+    form.addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+            if (!selectedTime) {
+
+                showMessage(
+                    "Selecciona una hora.",
+                    "error"
+                );
+
+                return;
+            }
+
+            const email =
+                document
+                    .getElementById("email")
+                    .value
+                    .trim();
+
+            const phone =
+                document
+                    .getElementById("phone")
+                    .value
+                    .trim();
+
+            if (!email && !phone) {
+
+                showMessage(
+                    "Introduce un email o teléfono.",
+                    "error"
+                );
+
+                return;
+            }
+
+            const body = {
+
+                first_name:
+                    document
+                        .getElementById("first-name")
+                        .value,
+
+                last_name:
+                    document
+                        .getElementById("last-name")
+                        .value,
+
+                email:
+                    email || null,
+
+                phone:
+                    phone || null,
+
+                service_id:
+                    serviceSelect.value,
+
+                booking_date:
+                    dateInput.value,
+
+                booking_time:
+                    `${selectedTime}:00`,
+
+                notes:
+                    document
+                        .getElementById("notes")
+                        .value || null,
+            };
+
+
+            const response = await fetch(
+                "/booking",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(body),
+                }
+            );
+
+
+            if (response.status === 409) {
+
+                showMessage(
+                    "Ese horario acaba de dejar de estar disponible. Elige otro.",
+                    "error"
+                );
+
+                await loadAvailability();
+
+                return;
+            }
+
+
+            if (!response.ok) {
+
+                const error =
+                    await response.json();
+
+                showMessage(
+                    error.detail ??
+                    "No se pudo realizar la reserva.",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            const confirmation =
+                await response.json();
+
+            showMessage(
+                `Reserva confirmada: ${confirmation.service_name} a las ${selectedTime}.`,
+                "success"
+            );
+
+            await loadAvailability();
+        }
+    );
+
+
+    serviceSelect.addEventListener(
+        "change",
+        loadAvailability
+    );
+
+    dateInput.addEventListener(
+        "change",
+        loadAvailability
+    );
+
+
+    const today =
+        new Date()
+            .toISOString()
+            .split("T")[0];
+
+    dateInput.min = today;
+
+
+    loadServices();
+
+</script>
+
+</body>
+</html>
