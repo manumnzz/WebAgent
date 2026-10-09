@@ -217,7 +217,7 @@ Describe:
 
 Contiene únicamente los datos reales disponibles para activar funcionalidades concretas.
 
-Algunos inputs ya están tipados con modelos específicos, por ejemplo `ReviewData`, mientras que otros siguen pendientes de evolucionar según avance el sistema.
+Los inputs evolucionan hacia modelos tipados cuando la complejidad de la capability lo requiere. Actualmente existen modelos específicos como `ReviewData` y `BookingConfiguration`.
 
 ### CapabilityReadiness
 
@@ -251,17 +251,17 @@ class CapabilityImplementation(BaseModel):
 
 El DeveloperAgent recibe estas implementaciones ya construidas y se encarga de **integrarlas visualmente**, no de reinventar su comportamiento.
 
-### Implementaciones actuales
+### Implementaciones actuales integradas en el pipeline
 
 - [x] WhatsApp (`wa.me`)
 - [x] Google Maps
 - [x] Contact form
 - [x] Gallery
 - [x] Reviews
-- [ ] Booking
+- [ ] Booking — motor V1 funcional; pendiente integrarlo en el registry/pipeline
 - [ ] Analytics
 
-Las cinco capabilities implementadas han sido probadas simultáneamente en una generación end-to-end y se integran correctamente en la misma web final.
+Las cinco primeras capabilities han sido probadas simultáneamente en una generación end-to-end y se integran correctamente en la misma web final.
 
 ### Capabilities ya validadas
 
@@ -284,6 +284,215 @@ Recibe una colección de assets y genera HTML repetible para mostrarlos sin inve
 #### Reviews
 
 Utiliza `ReviewData` tipado con Pydantic y valida autor, texto y rating. Las valoraciones están restringidas al rango 1–5 y el contenido se escapa antes de insertarse en HTML.
+
+---
+
+## Booking V1
+
+Durante el Día 13 se construyó el motor funcional de reservas de WebAgent como subsistema desacoplado del pipeline principal de capabilities.
+
+### Principios de diseño
+
+Booking V1 sigue estas decisiones:
+
+- el **calendario externo es la fuente de verdad** de disponibilidad y reservas;
+- no existe una base de datos propia de reservas en V1;
+- no existe un panel administrativo propio en V1;
+- una reserva válida se confirma automáticamente, sin estado `pending` ni confirmación manual del negocio;
+- antes de crear el evento se vuelve a consultar la disponibilidad para reducir dobles reservas;
+- las credenciales OAuth nunca forman parte de `CapabilityInputs`, `WebsiteSpec` ni del contexto enviado a un LLM;
+- la integración con calendarios se realiza mediante una abstracción `CalendarProvider`, evitando acoplar el dominio a Google Calendar.
+
+Arquitectura actual:
+
+```text
+Frontend /reservar
+        ↓
+Booking API
+        ↓
+BookingManager
+        ↓
+Availability Engine
+        ↓
+CalendarProvider
+        ↓
+GoogleCalendarProvider
+        ↓
+Google Calendar
+```
+
+### Dominio y configuración
+
+`BookingConfiguration` representa la configuración de reservas de un negocio:
+
+```text
+BookingConfiguration
+├── timezone
+├── services[]
+│   ├── id
+│   ├── name
+│   └── duration_minutes
+├── weekly_schedule[]
+│   ├── weekday
+│   └── ranges[]
+└── slot_interval_minutes
+```
+
+La configuración se carga actualmente desde `config/booking.json` mediante `config_loader.py`. El fichero actual sirve como configuración de desarrollo; el objetivo es que WebAgent lo construya automáticamente a partir de la información del negocio y de datos adicionales recogidos cuando falten.
+
+Los `service_id` son identificadores técnicos. La dirección prevista es generarlos de forma determinista a partir del nombre del servicio y persistirlos en la configuración, evitando pedir al negocio que gestione IDs manualmente.
+
+### Availability Engine
+
+El motor de disponibilidad combina:
+
+- horario semanal del negocio;
+- duración del servicio;
+- intervalo de slots;
+- zona horaria;
+- intervalos ocupados del calendario externo.
+
+Utiliza intervalos semiabiertos para permitir, por ejemplo, una nueva reserva exactamente cuando termina el evento anterior.
+
+### CalendarProvider
+
+El dominio depende de la interfaz `CalendarProvider`, no de Google directamente.
+
+Implementaciones actuales:
+
+- `FakeCalendarProvider`: tests automatizados sin servicios externos;
+- `GoogleCalendarProvider`: consulta `freeBusy`, crea eventos y permite cancelarlos mediante Google Calendar API.
+
+Esto deja abierta la incorporación futura de otros proveedores, por ejemplo Microsoft Calendar, sin modificar `BookingManager`.
+
+### BookingManager
+
+`BookingManager` coordina el caso de uso:
+
+```text
+BookingRequest
+      ↓
+resolver servicio
+      ↓
+consultar disponibilidad actual
+      ↓
+¿slot todavía disponible?
+   ├── no → BookingSlotUnavailableError
+   └── sí
+        ↓
+crear evento
+        ↓
+BookingConfirmation
+```
+
+La API traduce un slot ocupado a `409 Conflict`.
+
+### API HTTP
+
+Booking dispone de una API FastAPI mínima:
+
+```text
+GET  /booking/services
+GET  /booking/availability
+POST /booking
+GET  /health
+```
+
+`GET /booking/services` permite que el frontend descubra dinámicamente los servicios del negocio sin hardcodear nombres o IDs.
+
+### Frontend de referencia
+
+Existe una interfaz funcional en:
+
+```text
+/reservar
+```
+
+El frontend:
+
+1. carga servicios desde la API;
+2. consulta disponibilidad al elegir servicio y fecha;
+3. solicita nombre, contacto y notas;
+4. crea la reserva mediante `POST /booking`;
+5. vuelve a consultar disponibilidad tras confirmar la reserva.
+
+Se ha validado manualmente el flujo completo navegador → API → Google Calendar real → disponibilidad actualizada.
+
+### OAuth y seguridad
+
+La integración local con Google Calendar utiliza OAuth 2.0.
+
+Los archivos:
+
+```text
+credentials.json
+token.json
+```
+
+están excluidos del repositorio mediante `.gitignore`.
+
+Scopes utilizados:
+
+```text
+https://www.googleapis.com/auth/calendar.events
+https://www.googleapis.com/auth/calendar.freebusy
+```
+
+### Estado de Booking
+
+```text
+Modelos de dominio             ✅
+Availability Engine            ✅
+BookingManager                 ✅
+CalendarProvider               ✅
+FakeCalendarProvider           ✅
+GoogleCalendarProvider         ✅
+OAuth Google                   ✅
+API HTTP                       ✅
+Configuración externa          ✅
+Frontend /reservar             ✅
+Reserva real navegador → GCal  ✅
+Integración Capability Registry ⏳
+Generación automática config   ⏳
+Information Collector          ⏳
+```
+
+Por tanto, **Booking V1 es funcional como subsistema**, pero todavía no se considera una capability completamente terminada hasta integrarla en el workflow normal de WebAgent.
+
+### Evolución prevista de Booking
+
+Siguiente fase:
+
+```text
+BusinessProfile
+      ↓
+Information Collector
+      ↓
+Booking Configuration Builder
+      ↓
+BookingConfiguration
+      ↓
+CapabilityInputs
+      ↓
+CapabilityReadiness
+      ↓
+BookingImplementation
+      ↓
+Implementation Registry
+      ↓
+DeveloperAgent
+```
+
+Más adelante podrán añadirse sin bloquear V1:
+
+- emails de confirmación/cancelación;
+- webhooks o push notifications del proveedor de calendario para detectar cambios externos;
+- WhatsApp como canal opcional de notificación;
+- Microsoft Calendar u otros providers;
+- reglas adicionales como antelación mínima, horizonte máximo o buffers entre reservas;
+- protección más fuerte frente a concurrencia real en despliegues distribuidos.
+
+No forman parte del alcance actual: base de datos propia de reservas, panel administrativo completo o sistema multi-tenant.
 
 ---
 
@@ -351,6 +560,12 @@ El número de intentos de reparación está limitado para evitar loops infinitos
 ## Estructura del proyecto
 
 ```text
+config/
+└── booking.json
+
+scripts/
+└── test_manual_google_calendar.py
+
 src/
 ├── agents/
 │   ├── agent_config.py
@@ -361,7 +576,20 @@ src/
 │   ├── design_agent.py
 │   └── developer_agent.py
 │
+├── api/
+│   ├── main.py
+│   ├── booking_api.py
+│   └── static/
+│       └── booking.html
+│
 ├── capabilities/
+│   ├── booking/
+│   │   ├── availability.py
+│   │   ├── booking_manager.py
+│   │   ├── calendar_provider.py
+│   │   ├── config_loader.py
+│   │   ├── fake_calendar_provider.py
+│   │   └── google_calendar_provider.py
 │   ├── capability_input_resolver.py
 │   ├── capability_inputs.py
 │   ├── capability_readiness.py
@@ -370,7 +598,7 @@ src/
 │   ├── capability_resolver.py
 │   ├── implementation_registry.py
 │   ├── models/
-│   │   ├── __init__.py
+│   │   ├── booking.py
 │   │   └── review.py
 │   └── implementations/
 │       ├── whatsapp.py
@@ -379,22 +607,13 @@ src/
 │       ├── gallery.py
 │       └── reviews.py
 │
+├── integrations/
+│   └── google_calendar_auth.py
+│
 ├── context/
-│   └── context_builders.py
-│
 ├── specs/
-│   ├── capability_spec.py
-│   ├── website_spec.py
-│   └── website_spec_builder.py
-│
 ├── state/
-│   └── project_state.py
-│
 ├── tools/
-│   ├── business_tools.py
-│   ├── filesystem_tools.py
-│   └── tool_registry.py
-│
 ├── validation/
 ├── tests/
 └── main.py
@@ -430,7 +649,7 @@ En Windows:
 pip install -r requirements.txt
 ```
 
-### 4. Configurar credenciales
+### 4. Configurar OpenAI
 
 Crear un archivo `.env` en la raíz del proyecto:
 
@@ -452,6 +671,21 @@ python src/main.py
 pytest
 ```
 
+### 7. Ejecutar Booking API en desarrollo
+
+Para utilizar la integración real con Google Calendar es necesario disponer localmente de `credentials.json` y completar el flujo OAuth para generar `token.json`.
+
+```bash
+uvicorn api.main:app --reload --app-dir src
+```
+
+Después se puede abrir:
+
+```text
+http://127.0.0.1:8000/reservar
+http://127.0.0.1:8000/docs
+```
+
 ---
 
 ## Principios de diseño
@@ -468,6 +702,8 @@ WebAgent sigue varias reglas arquitectónicas que guían su evolución:
 8. **Limitar explícitamente loops y procesos de reparación.**
 9. **Añadir abstracciones solo cuando resuelven un problema real.**
 10. **Medir coste y calidad antes de optimizar modelos.**
+11. **Mantener credenciales y secretos fuera del contexto de los modelos.**
+12. **Usar proveedores externos detrás de interfaces cuando el dominio no deba depender de una implementación concreta.**
 
 ---
 
@@ -486,13 +722,29 @@ Estado actual del objetivo:
 - [x] Contact form
 - [x] Gallery
 - [x] Reviews
-- [ ] Booking
+- [ ] Booking — V1 funcional fuera del pipeline; siguiente paso: integración como capability
 - [ ] Analytics
 - [ ] Prueba global final de todas las capabilities
 
 ### Próximo paso inmediato
 
-Antes de implementar `Booking`, se definirá su arquitectura funcional: qué representa una reserva, dónde se almacena, cómo se gestiona su estado y cómo evitar acoplar WebAgent a un proveedor externo concreto.
+Integrar el subsistema Booking ya funcional en la arquitectura de capabilities:
+
+```text
+BookingConfiguration
+        ↓
+CapabilityInputs
+        ↓
+CapabilityReadiness
+        ↓
+BookingImplementation
+        ↓
+Implementation Registry
+        ↓
+DeveloperAgent
+```
+
+Después se abordará la generación automática de `BookingConfiguration` a partir del perfil del negocio y de información adicional recopilada cuando falten duraciones, horarios u otros datos obligatorios.
 
 ### Próximos objetivos
 
@@ -511,8 +763,8 @@ Antes de implementar `Booking`, se definirá su arquitectura funcional: qué rep
 
 Las siguientes líneas de evolución están previstas para las próximas iteraciones:
 
-- completar Booking y Analytics;
-- diseñar un sistema de reservas reutilizable antes de implementar Booking;
+- terminar la integración de Booking y completar Analytics;
+- generar configuraciones de capabilities a partir de información real del negocio;
 - obtener automáticamente información pública que falte en el input inicial;
 - recolectar y gestionar fotografías, logos y otros assets del negocio;
 - incorporar una fase de revisión humana posterior a la validación técnica;
