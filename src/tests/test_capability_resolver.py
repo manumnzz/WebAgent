@@ -48,6 +48,43 @@ def test_resolves_only_ready_capabilities():
             },
             developer_requirements=[],
         ),
+
+        WebsiteCapabilitySpec(
+            type="booking",
+            required=True,
+            reason="Permitir reservar citas.",
+            description="Sistema de reservas",
+            required_inputs=[
+                "booking_configuration",
+            ],
+            ready=True,
+            missing_inputs=[],
+            input_values={
+                "booking_configuration": {
+                    "timezone": "Europe/Madrid",
+                    "services": [
+                        {
+                            "id": "corte",
+                            "name": "Corte",
+                            "duration_minutes": 30,
+                        }
+                    ],
+                    "weekly_schedule": [
+                        {
+                            "weekday": "monday",
+                            "ranges": [
+                                {
+                                    "start": "09:00",
+                                    "end": "14:00",
+                                }
+                            ],
+                        }
+                    ],
+                    "slot_interval_minutes": 30,
+                }
+            },
+            developer_requirements=[],
+        ),
     ]
 
     implementations = (
@@ -68,7 +105,7 @@ def test_resolves_only_ready_capabilities():
         if implementation.type == "gallery"
     )
 
-    assert len(implementations) == 2
+    assert len(implementations) == 3
 
     assert (
         "34612345678"

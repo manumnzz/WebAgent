@@ -19,6 +19,10 @@ from capabilities.models.booking import (
     BookingService,
 )
 
+from fastapi.staticfiles import StaticFiles
+
+from tools.filesystem_tools import WEBSITE_ROOT
+
 
 class AvailabilityResponse(BaseModel):
     booking_date: date
@@ -113,4 +117,15 @@ def create_booking_app(
     def get_services() -> list[BookingService]:
 
         return manager.configuration.services
+
+    if WEBSITE_ROOT.exists():
+        app.mount(
+            "/",
+            StaticFiles(
+                directory=WEBSITE_ROOT,
+                html=True,
+            ),
+            name="generated-website",
+        )
+        
     return app

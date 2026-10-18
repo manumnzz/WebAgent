@@ -8,6 +8,9 @@ from capabilities.capability_input_resolver import (
 from capabilities.models.review import (
     ReviewData,
 )
+from capabilities.booking.config_loader import (
+    load_booking_configuration,
+)
 from tools.filesystem_tools import WEBSITE_ROOT
 from state.project_state import ProjectState
 from context.context_builders import (
@@ -51,6 +54,12 @@ state.capability_inputs.review_data = [
     ),
 ]
 
+state.capability_inputs.booking_configuration = (
+    load_booking_configuration(
+        "config/booking.json"
+    )
+)
+
 business_description = """
 Quiero crear una página web para Iron Garage Sevilla,
 un taller especializado en mantenimiento, mecánica rápida
@@ -61,8 +70,10 @@ suspensión, escapes, diagnosis electrónica y pequeñas
 modificaciones estéticas.
 
 El objetivo principal de la web es conseguir que los clientes
-contacten directamente por WhatsApp para pedir presupuesto
-o reservar una cita.
+contacten directamente por WhatsApp para pedir presupuesto.
+
+Además, quiero que puedan reservar una cita directamente
+desde la web mediante nuestro sistema de reservas online.
 
 Nuestro WhatsApp es +34 612 345 678.
 

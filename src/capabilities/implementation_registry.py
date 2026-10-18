@@ -21,7 +21,9 @@ from capabilities.implementations.gallery import (
 from capabilities.implementations.reviews import (
     build_reviews_implementation,
 )
-
+from capabilities.implementations.booking import (
+    build_booking_implementation,
+)
 
 CapabilityBuilder = Callable[..., CapabilityImplementation]
 
@@ -34,6 +36,7 @@ CAPABILITY_IMPLEMENTATION_REGISTRY: dict[
     "contact_form": build_contact_form_implementation,
     "gallery": build_gallery_implementation,
     "reviews": build_reviews_implementation,
+    "booking": build_booking_implementation,
 }
 
 def get_capability_implementation_builder(
