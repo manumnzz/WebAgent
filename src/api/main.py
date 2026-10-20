@@ -36,10 +36,9 @@ google_service = (
     build_google_calendar_service()
 )
 
-calendar_provider = (
-    GoogleCalendarProvider(
-        service=google_service,
-    )
+calendar_provider = GoogleCalendarProvider(
+    service=google_service,
+    business_info=configuration.business,
 )
 
 booking_manager = BookingManager(

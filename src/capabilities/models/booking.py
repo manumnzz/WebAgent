@@ -18,6 +18,67 @@ class BookingService(BaseModel):
     name: str = Field(min_length=1)
     duration_minutes: int = Field(gt=0)
 
+class BookingServiceDraft(BaseModel):
+    id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    duration_minutes: int | None = Field(
+        default=None,
+        gt=0,
+    )
+
+class BookingConfigurationDraft(BaseModel):
+    timezone: str | None = None
+
+    services: list[BookingServiceDraft] = Field(
+        default_factory=list
+    )
+
+    weekly_schedule: list[BookingDaySchedule] | None = None
+
+    slot_interval_minutes: int | None = Field(
+        default=None,
+        gt=0,
+    )
+
+class BookingMissingInformation(BaseModel):
+    service_durations: list[str] = Field(
+        default_factory=list
+    )
+
+    timezone: bool = False
+    weekly_schedule: bool = False
+    slot_interval_minutes: bool = False
+
+    @property
+    def is_complete(self) -> bool:
+        return (
+            not self.service_durations
+            and not self.timezone
+            and not self.weekly_schedule
+            and not self.slot_interval_minutes
+        )
+
+class BookingCollectedInformation(BaseModel):
+    service_durations: dict [str, int] = Field(
+        default_factory=dict
+    )
+
+    timezone: str | None = None
+
+    weekly_schedule: list[BookingDaySchedule] | None = None
+
+    slot_interval_minutes: int | None = Field(
+        default=None,
+        gt=0,
+    )
+
+class BookingBusinessInfo(BaseModel):
+    name: str | None = None
+    phone: str | None = None
+    whatsapp: str | None = None
+    email: str | None = None
+    address: str | None = None
+
 class BookingTimeRange(BaseModel):
     start: time
     end: time
@@ -40,6 +101,8 @@ class BookingConfiguration(BaseModel):
 
     services: list[BookingService]
     weekly_schedule: list[BookingDaySchedule]
+    
+    business: BookingBusinessInfo | None = None
 
     slot_interval_minutes: int = Field(
         default=30,

@@ -9,7 +9,9 @@ from validation.validator import ValidationResult
 from specs.website_spec import WebsiteSpec
 from specs.capability_spec import CapabilityPlan
 from capabilities.capability_inputs import CapabilityInputs
-
+from capabilities.models.booking import (
+    BookingConfigurationDraft,
+)
 
 class ProjectState(BaseModel):
     business: BusinessProfile | None = None
@@ -18,11 +20,15 @@ class ProjectState(BaseModel):
     capability_inputs: CapabilityInputs = Field(
         default_factory=CapabilityInputs
     )
+    booking_configuration_draft: (
+        BookingConfigurationDraft | None 
+    ) = None
     website_copy: WebsiteCopy | None = None
     design: DesignSpec | None = None
     website_spec: WebsiteSpec | None = None
     development: DevelopmentResult | None = None
     validation: ValidationResult | None = None
+    
     
 
 

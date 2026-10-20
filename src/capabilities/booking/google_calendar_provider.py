@@ -4,6 +4,7 @@ from capabilities.booking.calendar_provider import (
     CalendarProvider,
 )
 from capabilities.models.booking import (
+    BookingBusinessInfo,
     BookingRequest,
     CalendarBusyInterval,
 )
@@ -15,9 +16,11 @@ class GoogleCalendarProvider(CalendarProvider):
         self,
         service,
         calendar_id: str = "primary",
+        business_info: BookingBusinessInfo | None = None,
     ):
         self.service = service
         self.calendar_id = calendar_id
+        self.business_info = business_info
 
     def get_busy_intervals(
         self,
@@ -74,25 +77,37 @@ class GoogleCalendarProvider(CalendarProvider):
     ) -> str:
 
         description_lines = [
-            "Reserva creada por WebAgent",
+            "Reserva confirmada",
             "",
-            (
-                f"Cliente: "
-                f"{request.first_name} "
-                f"{request.last_name}"
-            ),
             f"Servicio: {service_name}",
         ]
 
-        if request.email:
-            description_lines.append(
-                f"Email: {request.email}"
-            )
+        if self.business_info:
 
-        if request.phone:
-            description_lines.append(
-                f"Teléfono: {request.phone}"
-            )
+            if self.business_info.name:
+                description_lines.append(
+                    f"Negocio: {self.business_info.name}"
+                )
+
+            if self.business_info.phone:
+                description_lines.append(
+                    f"Teléfono: {self.business_info.phone}"
+                )
+
+            if self.business_info.whatsapp:
+                description_lines.append(
+                    f"WhatsApp: {self.business_info.whatsapp}"
+                )
+
+            if self.business_info.email:
+                description_lines.append(
+                    f"Email: {self.business_info.email}"
+                )
+
+            if self.business_info.address:
+                description_lines.append(
+                    f"Dirección: {self.business_info.address}"
+                )
 
         if request.notes:
             description_lines.extend(
@@ -137,12 +152,34 @@ class GoogleCalendarProvider(CalendarProvider):
             },
         }
 
+        if (
+            self.business_info
+            and self.business_info.address
+        ):
+            event["location"] = (
+                self.business_info.address
+            )
+
+        if request.email:
+            event["attendees"] = [
+                {
+                    "email": request.email,
+                }
+            ]
+
+        insert_kwargs = {
+            "calendarId": self.calendar_id,
+            "body": event,
+        }
+
+        if request.email:
+            insert_kwargs["sendUpdates"] = "all"
+
         created_event = (
             self.service
             .events()
             .insert(
-                calendarId=self.calendar_id,
-                body=event,
+                **insert_kwargs
             )
             .execute()
         )

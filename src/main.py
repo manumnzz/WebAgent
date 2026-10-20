@@ -8,8 +8,23 @@ from capabilities.capability_input_resolver import (
 from capabilities.models.review import (
     ReviewData,
 )
-from capabilities.booking.config_loader import (
-    load_booking_configuration,
+from capabilities.booking.configuration_builder import (
+    build_booking_configuration_draft,
+)
+from capabilities.booking.configuration_collector import (
+    apply_booking_information,
+)
+from capabilities.booking.configuration_finalizer import (
+    finalize_booking_configuration,
+)
+from capabilities.booking.config_writer import (
+    save_booking_configuration,
+)
+from capabilities.models.booking import (
+    BookingCollectedInformation,
+    BookingDaySchedule,
+    BookingTimeRange,
+    BookingBusinessInfo,
 )
 from tools.filesystem_tools import WEBSITE_ROOT
 from state.project_state import ProjectState
@@ -53,12 +68,6 @@ state.capability_inputs.review_data = [
         rating=4,
     ),
 ]
-
-state.capability_inputs.booking_configuration = (
-    load_booking_configuration(
-        "config/booking.json"
-    )
-)
 
 business_description = """
 Quiero crear una página web para Iron Garage Sevilla,
@@ -106,6 +115,105 @@ state.business = run_agent(
 
 print("\nResultado final:")
 print(state.business)
+
+state.booking_configuration_draft = (
+    build_booking_configuration_draft(
+        state.business.services
+    )
+)
+
+booking_information = BookingCollectedInformation(
+    service_durations={
+        service.id: 60
+        for service
+        in state.booking_configuration_draft.services
+    },
+    timezone="Europe/Madrid",
+    weekly_schedule=[
+        BookingDaySchedule(
+            weekday="monday",
+            ranges=[
+                BookingTimeRange(
+                    start="09:00",
+                    end="14:00",
+                )
+            ],
+        ),
+        BookingDaySchedule(
+            weekday="tuesday",
+            ranges=[
+                BookingTimeRange(
+                    start="09:00",
+                    end="14:00",
+                )
+            ],
+        ),
+        BookingDaySchedule(
+            weekday="wednesday",
+            ranges=[
+                BookingTimeRange(
+                    start="09:00",
+                    end="14:00",
+                )
+            ],
+        ),
+        BookingDaySchedule(
+            weekday="thursday",
+            ranges=[
+                BookingTimeRange(
+                    start="09:00",
+                    end="14:00",
+                )
+            ],
+        ),
+        BookingDaySchedule(
+            weekday="friday",
+            ranges=[
+                BookingTimeRange(
+                    start="09:00",
+                    end="14:00",
+                )
+            ],
+        ),
+    ],
+    slot_interval_minutes=30,
+)
+
+state.booking_configuration_draft = (
+    apply_booking_information(
+        state.booking_configuration_draft,
+        booking_information,
+    )
+)
+
+booking_configuration = (
+    finalize_booking_configuration(
+        state.booking_configuration_draft
+    )
+)
+
+booking_configuration.business = BookingBusinessInfo(
+    name=state.business.name,
+    phone=state.business.contact.phone,
+    whatsapp=state.business.contact.whatsapp,
+    email=state.business.contact.email,
+    address=state.business.contact.address,
+)
+
+state.capability_inputs.booking_configuration = (
+    booking_configuration
+)
+
+save_booking_configuration(
+    booking_configuration
+)
+
+print("\n=== BOOKING CONFIGURATION ===")
+print(
+    booking_configuration.model_dump_json(
+        indent=2
+    )
+)
 
 state.capability_inputs = (
     resolve_business_capability_inputs(

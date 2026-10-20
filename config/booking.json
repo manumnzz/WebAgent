@@ -2,14 +2,39 @@
   "timezone": "Europe/Madrid",
   "services": [
     {
-      "id": "corte",
-      "name": "Corte",
-      "duration_minutes": 30
+      "id": "cambios-de-aceite-y-filtros",
+      "name": "Cambios de aceite y filtros",
+      "duration_minutes": 60
     },
     {
-      "id": "corte-barba",
-      "name": "Corte + barba",
-      "duration_minutes": 45
+      "id": "frenos",
+      "name": "Frenos",
+      "duration_minutes": 60
+    },
+    {
+      "id": "neumaticos",
+      "name": "Neumáticos",
+      "duration_minutes": 60
+    },
+    {
+      "id": "suspension",
+      "name": "Suspensión",
+      "duration_minutes": 60
+    },
+    {
+      "id": "escapes",
+      "name": "Escapes",
+      "duration_minutes": 60
+    },
+    {
+      "id": "diagnosis-electronica",
+      "name": "Diagnosis electrónica",
+      "duration_minutes": 60
+    },
+    {
+      "id": "pequenas-modificaciones-esteticas",
+      "name": "Pequeñas modificaciones estéticas",
+      "duration_minutes": 60
     }
   ],
   "weekly_schedule": [
@@ -19,10 +44,6 @@
         {
           "start": "09:00:00",
           "end": "14:00:00"
-        },
-        {
-          "start": "16:00:00",
-          "end": "20:00:00"
         }
       ]
     },
@@ -32,10 +53,6 @@
         {
           "start": "09:00:00",
           "end": "14:00:00"
-        },
-        {
-          "start": "16:00:00",
-          "end": "20:00:00"
         }
       ]
     },
@@ -45,10 +62,6 @@
         {
           "start": "09:00:00",
           "end": "14:00:00"
-        },
-        {
-          "start": "16:00:00",
-          "end": "20:00:00"
         }
       ]
     },
@@ -58,10 +71,6 @@
         {
           "start": "09:00:00",
           "end": "14:00:00"
-        },
-        {
-          "start": "16:00:00",
-          "end": "20:00:00"
         }
       ]
     },
@@ -71,10 +80,6 @@
         {
           "start": "09:00:00",
           "end": "14:00:00"
-        },
-        {
-          "start": "16:00:00",
-          "end": "20:00:00"
         }
       ]
     }
