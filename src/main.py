@@ -2,6 +2,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from pathlib import Path
+
+import argparse
+
+from intake.loader import load_project_input
+from intake.business_adapter import (
+    apply_explicit_business_data,
+    build_business_input,
+)
 from capabilities.capability_input_resolver import (
     resolve_business_capability_inputs,
 )
@@ -45,72 +54,50 @@ from validation.validator import validate_website
 
 state = ProjectState()
 
-state.capability_inputs.gallery_assets = [
-    "https://placehold.co/800x600?text=Garage+1",
-    "https://placehold.co/800x600?text=Garage+2",
-    "https://placehold.co/800x600?text=Garage+3",
-]
+state.capability_inputs.gallery_assets = []
 
-state.capability_inputs.review_data = [
-    ReviewData(
-        author="Carlos M.",
-        text="Muy buen trabajo con la suspensión del coche.",
-        rating=5,
-    ),
-    ReviewData(
-        author="Laura R.",
-        text="Buen trato y presupuesto claro desde el principio.",
-        rating=5,
-    ),
-    ReviewData(
-        author="David P.",
-        text="Me dejaron el coche perfecto.",
-        rating=4,
-    ),
-]
+state.capability_inputs.review_data = []
 
-business_description = """
-Quiero crear una página web para Iron Garage Sevilla,
-un taller especializado en mantenimiento, mecánica rápida
-y personalización de coches.
+project_root = Path(__file__).resolve().parent.parent
 
-Ofrecemos cambios de aceite y filtros, frenos, neumáticos,
-suspensión, escapes, diagnosis electrónica y pequeñas
-modificaciones estéticas.
+parser = argparse.ArgumentParser(
+    description="Genera una web a partir de un encargo."
+)
 
-El objetivo principal de la web es conseguir que los clientes
-contacten directamente por WhatsApp para pedir presupuesto.
+parser.add_argument(
+    "--input",
+    type=Path,
+    default=project_root / "config" / "project_input.json",
+    help="Ruta al archivo JSON del encargo.",
+)
 
-Además, quiero que puedan reservar una cita directamente
-desde la web mediante nuestro sistema de reservas online.
+args = parser.parse_args()
 
-Nuestro WhatsApp es +34 612 345 678.
+state.project_input = load_project_input(
+    args.input
+)
 
-También quiero que puedan enviarnos consultas mediante
-un formulario de contacto. Nuestro email es
-contacto@irongarage.es.
-
-También quiero que los clientes puedan localizar fácilmente
-el taller y abrir su ubicación en Google Maps.
-La dirección es Calle Sierpes 15, Sevilla.
-
-También quiero una galería donde podamos enseñar fotografías
-del taller, de los coches y de algunos trabajos realizados.
-
-También quiero mostrar opiniones reales de clientes
-para transmitir confianza a nuevos visitantes.
-
-Quiero una estética moderna, agresiva y profesional,
-con un estilo inspirado en el mundo del motor.
-"""
+print(
+    "\nEncargo cargado:",
+    state.project_input.business_name,
+)
 
 # ============================================================
 # BUSINESS AGENT
 # ============================================================
 
-state.business = run_agent(
+business_input = build_business_input(
+    state.project_input
+)
+
+business_result = run_agent(
     agent=BUSINESS_AGENT,
-    user_input=business_description
+    user_input=business_input,
+)
+
+state.business = apply_explicit_business_data(
+    business=business_result,
+    project_input=state.project_input,
 )
 
 print("\nResultado final:")

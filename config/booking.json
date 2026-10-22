@@ -2,38 +2,18 @@
   "timezone": "Europe/Madrid",
   "services": [
     {
-      "id": "cambios-de-aceite-y-filtros",
-      "name": "Cambios de aceite y filtros",
+      "id": "fisioterapia-deportiva",
+      "name": "Fisioterapia deportiva",
       "duration_minutes": 60
     },
     {
-      "id": "frenos",
-      "name": "Frenos",
+      "id": "masaje-terapeutico",
+      "name": "Masaje terapéutico",
       "duration_minutes": 60
     },
     {
-      "id": "neumaticos",
-      "name": "Neumáticos",
-      "duration_minutes": 60
-    },
-    {
-      "id": "suspension",
-      "name": "Suspensión",
-      "duration_minutes": 60
-    },
-    {
-      "id": "escapes",
-      "name": "Escapes",
-      "duration_minutes": 60
-    },
-    {
-      "id": "diagnosis-electronica",
-      "name": "Diagnosis electrónica",
-      "duration_minutes": 60
-    },
-    {
-      "id": "pequenas-modificaciones-esteticas",
-      "name": "Pequeñas modificaciones estéticas",
+      "id": "valoracion-inicial",
+      "name": "Valoración inicial",
       "duration_minutes": 60
     }
   ],
@@ -84,5 +64,12 @@
       ]
     }
   ],
+  "business": {
+    "name": "Fisio Alameda",
+    "phone": null,
+    "whatsapp": "615584412",
+    "email": "alamedafisio@gmail.com",
+    "address": "Alameda de Hércules, 42, Casco Antiguo, 41002 Sevilla"
+  },
   "slot_interval_minutes": 30
 }

@@ -1,0 +1,35 @@
+{
+  "business_name": "Iron Garage Sevilla",
+  "business_description": "Taller especializado en mantenimiento, mecánica rápida y personalización de coches. Queremos transmitir profesionalidad y nuestra vinculación con el mundo del motor.",
+  "business_type": "Taller mecánico",
+  "location": "Sevilla",
+  "services": [
+    "Cambio de aceite y filtros",
+    "Frenos",
+    "Neumáticos",
+    "Suspensión",
+    "Escapes",
+    "Diagnosis electrónica",
+    "Pequeñas modificaciones estéticas"
+  ],
+  "contact": {
+    "whatsapp": "+34612345678",
+    "email": "contacto@irongarage.es",
+    "address": "Calle Sierpes 15, Sevilla"
+  },
+  "main_goal": "Conseguir solicitudes de presupuesto por WhatsApp y reservas de citas.",
+  "desired_style": [
+    "moderno",
+    "agresivo",
+    "profesional",
+    "inspirado en el mundo del motor"
+  ],
+  "requested_features": [
+    "whatsapp",
+    "contact_form",
+    "maps",
+    "gallery",
+    "reviews",
+    "booking"
+  ]
+}

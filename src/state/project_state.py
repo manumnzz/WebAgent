@@ -12,8 +12,11 @@ from capabilities.capability_inputs import CapabilityInputs
 from capabilities.models.booking import (
     BookingConfigurationDraft,
 )
+from intake.models import ProjectInput
 
 class ProjectState(BaseModel):
+    project_input: ProjectInput | None = None
+    
     business: BusinessProfile | None = None
     ux: WebsiteStructure | None = None
     capability_plan: CapabilityPlan | None = None
@@ -29,6 +32,6 @@ class ProjectState(BaseModel):
     development: DevelopmentResult | None = None
     validation: ValidationResult | None = None
     
-    
+
 
 

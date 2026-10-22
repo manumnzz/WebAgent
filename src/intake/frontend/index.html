@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cuéntanos sobre tu negocio</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 16px;
+      background: #f3f5f9;
+      color: #172033;
+      font-family: system-ui, sans-serif;
+    }
+    main {
+      max-width: 760px;
+      margin: auto;
+      padding: 32px;
+      border-radius: 16px;
+      background: white;
+    }
+    h1 { margin-top: 0; }
+    fieldset {
+      margin: 24px 0;
+      padding: 20px;
+      border: 1px solid #d9deea;
+      border-radius: 10px;
+    }
+    legend { padding: 0 8px; font-weight: 700; }
+    label { display: block; margin: 16px 0; }
+    input:not([type="checkbox"]), textarea {
+      display: block;
+      width: 100%;
+      margin-top: 6px;
+      padding: 10px;
+      border: 1px solid #b9c2d2;
+      border-radius: 6px;
+      font: inherit;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    small { display: block; margin-top: 6px; color: #526078; }
+    button {
+      padding: 12px 20px;
+      border: 0;
+      border-radius: 8px;
+      background: #2454da;
+      color: white;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .6; cursor: wait; }
+    #result { white-space: pre-wrap; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Cuéntanos sobre tu negocio</h1>
+    <p>
+      Esta información nos ayudará a preparar tu página web.
+      Los campos marcados con * son obligatorios.
+    </p>
+
+    <form id="project-form">
+      <fieldset>
+        <legend>Tu negocio</legend>
+
+        <label>
+          Nombre del negocio *
+          <input name="business_name" required>
+        </label>
+
+        <label>
+          Cuéntanos qué haces y qué te diferencia *
+          <textarea name="business_description" required></textarea>
+        </label>
+
+        <label>
+          Tipo de negocio
+          <input name="business_type" placeholder="Ej.: barbería">
+        </label>
+
+        <label>
+          Ciudad o zona
+          <input name="location">
+        </label>
+
+        <label>
+          Servicios o productos
+          <textarea name="services"></textarea>
+          <small>Escribe uno por línea.</small>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Datos públicos de contacto</legend>
+        <p>Indica los datos que quieres mostrar en la web.</p>
+
+        <label>
+          Teléfono
+          <input name="phone" type="tel">
+        </label>
+
+        <label>
+          WhatsApp
+          <input name="whatsapp" type="tel">
+        </label>
+
+        <label>
+          Email
+          <input name="email" type="email">
+        </label>
+
+        <label>
+          Dirección
+          <input name="address">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Objetivo y estilo</legend>
+
+        <label>
+          ¿Qué quieres conseguir con tu web?
+          <textarea
+            name="main_goal"
+            placeholder="Ej.: recibir más solicitudes de presupuesto"
+          ></textarea>
+        </label>
+
+        <label>
+          ¿Qué estilo te gustaría?
+          <textarea
+            name="desired_style"
+            placeholder="Ej.: moderno, sencillo, colores claros..."
+          ></textarea>
+        </label>
+
+        <label>
+          Webs que te gustan como referencia
+          <textarea name="reference_websites"></textarea>
+          <small>Escribe una dirección web por línea.</small>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>¿Qué te gustaría incluir?</legend>
+
+        <label>
+          <input type="checkbox" name="features" value="whatsapp">
+          Botón de WhatsApp
+        </label>
+
+        <label>
+          <input type="checkbox" name="features" value="contact_form">
+          Formulario de contacto
+        </label>
+
+        <label>
+          <input type="checkbox" name="features" value="maps">
+          Ubicación en Google Maps
+        </label>
+
+        <label>
+          <input type="checkbox" name="features" value="gallery">
+          Galería de fotografías
+        </label>
+
+        <label>
+          <input type="checkbox" name="features" value="reviews">
+          Opiniones de clientes
+        </label>
+
+        <label>
+          <input type="checkbox" name="features" value="booking">
+          Reserva de citas online
+        </label>
+      </fieldset>
+
+      <label>
+        ¿Hay algo más que debamos saber?
+        <textarea name="additional_notes"></textarea>
+      </label>
+
+      <button type="submit">Enviar información</button>
+      <p id="result" role="status" aria-live="polite"></p>
+    </form>
+  </main>
+
+  <script>
+    const form = document.querySelector("#project-form");
+    const result = document.querySelector("#result");
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    function optionalText(data, name) {
+      const value = String(data.get(name) ?? "").trim();
+      return value || null;
+    }
+
+    function lines(data, name) {
+      return String(data.get(name) ?? "")
+        .split(/\r?\n/)
+        .map(value => value.trim())
+        .filter(Boolean);
+    }
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+
+      const data = new FormData(form);
+
+      const payload = {
+        business_name: String(data.get("business_name") ?? "").trim(),
+        business_description: String(
+          data.get("business_description") ?? ""
+        ).trim(),
+        business_type: optionalText(data, "business_type"),
+        location: optionalText(data, "location"),
+        services: lines(data, "services"),
+        contact: {
+          phone: optionalText(data, "phone"),
+          whatsapp: optionalText(data, "whatsapp"),
+          email: optionalText(data, "email"),
+          address: optionalText(data, "address")
+        },
+        main_goal: optionalText(data, "main_goal"),
+        desired_style: optionalText(data, "desired_style")
+          ? [optionalText(data, "desired_style")]
+          : [],
+        reference_websites: lines(data, "reference_websites"),
+        requested_features: data.getAll("features"),
+        additional_notes: optionalText(data, "additional_notes")
+      };
+
+      submitButton.disabled = true;
+      result.textContent = "Comprobando información…";
+
+      try {
+        const response = await fetch("/intake", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const body = await response.json();
+
+        if (!response.ok) {
+          const errors = Array.isArray(body.detail)
+            ? body.detail.map(error => {
+                const field = error.loc.slice(1).join(".");
+                return `${field}: ${error.msg}`;
+              }).join("\n")
+            : "No se ha podido validar la información.";
+
+          result.textContent = errors;
+          return;
+        }
+
+        result.textContent =
+            "Hemos recibido tu información. " +
+            "Referencia del encargo: " + body.submission_id;
+      } catch (error) {
+        result.textContent =
+          "No se ha podido conectar con el servidor. " +
+          "Comprueba la conexión e inténtalo de nuevo.";
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

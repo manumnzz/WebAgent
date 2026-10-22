@@ -8,3 +8,6 @@ __pycache__/
 # Google Calendar credentials
 credentials.json
 token.json
+
+# Encargos y archivos de clientes
+/data/intake/
