@@ -291,7 +291,73 @@ Utiliza `ReviewData` tipado con Pydantic y valida autor, texto y rating. Las val
 
 Durante el Día 13 se construyó el motor funcional de reservas de WebAgent como subsistema desacoplado del pipeline principal de capabilities.
 
-### Principios de diseño
+### Formulario de encargos — Día 15
+
+Ejecuta estos comandos desde la raíz del repositorio con las dependencias instaladas.
+
+### Abrir el formulario
+
+```bash
+.venv/bin/python -m uvicorn intake.api:app --app-dir src --reload --port 8001
+```
+
+- Formulario: http://127.0.0.1:8001/
+- Documentación interactiva: http://127.0.0.1:8001/docs
+
+Esta aplicación es independiente de Booking y no necesita iniciar Google Calendar para recibir encargos. Mantén este proceso abierto mientras utilizas el formulario. Para detenerlo, pulsa `Ctrl+C`.
+
+`POST /intake` valida el JSON con `ProjectInput`. Una petición válida se guarda y devuelve `201 Created`, un `submission_id` y `status: received`; una entrada incompatible con el modelo devuelve `422`. Si falla el guardado, devuelve `500`.
+
+Cada envío se guarda por separado en:
+
+```text
+data/intake/<submission_id>/project_input.json
+```
+
+`data/intake/` está excluido de Git. El formulario actual recoge negocio, servicios, contacto público, objetivo, estilo, referencias, funcionalidades y notas. Todavía no incluye subida de archivos ni preguntas condicionales de reservas. Enviar el formulario no ejecuta los agentes.
+
+### Generar la web de un encargo
+
+En otra terminal, sustituye `REFERENCIA` por el identificador recibido:
+
+```bash
+.venv/bin/python src/main.py --input data/intake/REFERENCIA/project_input.json
+```
+
+Sin `--input`, se carga `config/project_input.json`:
+
+```bash
+.venv/bin/python src/main.py
+```
+
+La generación requiere `OPENAI_API_KEY`. El encargo original se conserva en `ProjectState.project_input`; BusinessAgent analiza su contenido y el adaptador conserva los campos explícitos del cliente.
+
+**Límites actuales:** cada generación sobrescribe `output/website` y `config/booking.json` compartidos. Booking todavía usa duraciones y horario temporales definidos en `main.py`; no son datos confirmados del cliente. Las galerías y reseñas de ejemplo se han retirado de `main.py` y faltan recursos reales.
+
+### Ver la web generada y las reservas
+
+Con credenciales locales de Google Calendar y OAuth configurado:
+
+```bash
+.venv/bin/python -m uvicorn api.main:app --app-dir src --reload --port 8000
+```
+
+- Web generada: http://127.0.0.1:8000/
+- Reservas: http://127.0.0.1:8000/reservar
+
+El servidor del formulario (`8001`) y el de Booking/web generada (`8000`) tienen responsabilidades distintas. Reinicia el segundo si necesitas que vuelva a cargar la configuración de Booking recién generada.
+
+### Validación al cierre del día 15
+
+```bash
+.venv/bin/python -m pytest src/tests -q
+```
+
+Resultado observado el 22/10/2026: **112 tests correctos**. El formulario, la validación HTTP, los envíos independientes y la generación desde un encargo se comprobaron también manualmente. No hay todavía tests dedicados para API/persistencia del intake.
+
+---
+
+## Principios de diseño
 
 Booking V1 sigue estas decisiones:
 
@@ -711,51 +777,27 @@ WebAgent sigue varias reglas arquitectónicas que guían su evolución:
 
 El backlog activo se gestiona mediante GitHub Issues.
 
-### En progreso
+### Completado
 
-- [#2 — Completar sistema de capabilities reutilizables](https://github.com/manumnzz/WebAgent/issues/2)
+- [#2 — Núcleo de seis capabilities reutilizables](https://github.com/manumnzz/WebAgent/issues/2): WhatsApp, Maps, Contact form, Gallery, Reviews y Booking V1 integrado.
+- [#7 — Formulario de encargos V1 e integración con el pipeline](https://github.com/manumnzz/WebAgent/issues/7): entrada estructurada, validación, almacenamiento por UUID y generación mediante `--input`.
 
-Estado actual del objetivo:
+### En progreso y siguiente paso
 
-- [x] WhatsApp
-- [x] Maps
-- [x] Contact form
-- [x] Gallery
-- [x] Reviews
-- [ ] Booking — V1 funcional fuera del pipeline; siguiente paso: integración como capability
-- [ ] Analytics
-- [ ] Prueba global final de todas las capabilities
+- [#4 — Recolección de información faltante](https://github.com/manumnzz/WebAgent/issues/4): existe la infraestructura de borradores y detección; falta la recogida real.
+- [#8 — Configuración de Booking en el formulario](https://github.com/manumnzz/WebAgent/issues/8): siguiente implementación; eliminar duraciones/horarios temporales y preguntar lo pendiente.
 
-### Próximo paso inmediato
+### Pendiente
 
-Integrar el subsistema Booking ya funcional en la arquitectura de capabilities:
-
-```text
-BookingConfiguration
-        ↓
-CapabilityInputs
-        ↓
-CapabilityReadiness
-        ↓
-BookingImplementation
-        ↓
-Implementation Registry
-        ↓
-DeveloperAgent
-```
-
-Después se abordará la generación automática de `BookingConfiguration` a partir del perfil del negocio y de información adicional recopilada cuando falten duraciones, horarios u otros datos obligatorios.
-
-### Próximos objetivos
-
-- [#3 — Optimizar agentes con SLM/LLM routing y control de costes](https://github.com/manumnzz/WebAgent/issues/3)
-- [#4 — Implementar recolección automática de información faltante](https://github.com/manumnzz/WebAgent/issues/4)
-- [#5 — Implementar recolección y gestión de multimedia](https://github.com/manumnzz/WebAgent/issues/5)
-- [#6 — Añadir revisión humana y modo `revise` al DeveloperAgent](https://github.com/manumnzz/WebAgent/issues/6)
-
-### Mejoras detectadas
-
-- [#1 — Controlar placement y duplicación de capabilities en la web final](https://github.com/manumnzz/WebAgent/issues/1)
+- [#5 — Recolección y gestión de multimedia](https://github.com/manumnzz/WebAgent/issues/5).
+- [#9 — Recuperación OAuth ante errores de refresh](https://github.com/manumnzz/WebAgent/issues/9).
+- [#10 — Normalización de entradas y resolución de contradicciones](https://github.com/manumnzz/WebAgent/issues/10).
+- [#11 — Salidas y configuración independientes por encargo](https://github.com/manumnzz/WebAgent/issues/11).
+- [#12 — Capability de Analytics](https://github.com/manumnzz/WebAgent/issues/12).
+- [#6 — Revisión humana y modo revise](https://github.com/manumnzz/WebAgent/issues/6).
+- [#3 — Medición de costes y selección de modelos](https://github.com/manumnzz/WebAgent/issues/3).
+- [#13 — Integración del scraper y seguimiento de captación](https://github.com/manumnzz/WebAgent/issues/13).
+- [#1 — Placement y duplicación de capabilities](https://github.com/manumnzz/WebAgent/issues/1).
 
 ---
 
