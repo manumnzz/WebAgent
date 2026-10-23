@@ -1,3 +1,6 @@
+from html import escape
+from urllib.parse import quote
+
 from capabilities.capability_implementation import (
     CapabilityImplementation,
 )
@@ -31,6 +34,13 @@ def build_booking_implementation(
 </a>
 """.strip()
 
+    for inquiry in configuration.inquiry_types:
+        href = f"/reservar?service_id={quote(inquiry.id, safe='')}"
+        html += (
+            f'\n<a class="capability-booking capability-booking-inquiry" '
+            f'href="{href}">{escape(inquiry.name)}</a>'
+        )
+
     return CapabilityImplementation(
         type="booking",
         html=html,
@@ -46,6 +56,12 @@ def build_booking_implementation(
             (
                 "La llamada a la acción puede adaptarse visualmente "
                 "al diseño de la web, pero debe conservar href=\"/reservar\"."
+            ),
+            (
+                "Cada enlace de consulta sin hora apunta a su opción concreta "
+                "de /reservar. Si una opción es Solicitar presupuesto, los "
+                "botones de presupuesto deben usar ese enlace; no crear un "
+                "formulario mailto: para la misma solicitud."
             ),
         ],
     )

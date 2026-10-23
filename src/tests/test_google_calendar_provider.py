@@ -180,6 +180,8 @@ def test_google_calendar_creates_event():
 
     event = call_kwargs["body"]
 
+    assert event["colorId"] == "10"
+
     assert (
         event["summary"]
         == "Manuel Buzón — Corte"
@@ -242,6 +244,7 @@ def test_pending_arrival_is_private_transparent_and_has_no_guest_invitation():
     assert event_id == "pending-event-1"
     kwargs = service.events.return_value.insert.call_args.kwargs
     event = kwargs["body"]
+    assert event["colorId"] == "5"
     assert kwargs["calendarId"] == "primary"
     assert "sendUpdates" not in kwargs
     assert "attendees" not in event
@@ -268,6 +271,8 @@ def test_inquiry_is_an_all_day_pending_calendar_item():
         option_name="Pedir presupuesto",
     )
     event = service.events.return_value.insert.call_args.kwargs["body"]
+    assert event["colorId"] == "9"
+    assert event["summary"].startswith("[PRESUPUESTO PENDIENTE]")
     assert event["start"] == {"date": "2030-01-04"}
     assert event["end"] == {"date": "2030-01-05"}
     assert event["transparency"] == "transparent"

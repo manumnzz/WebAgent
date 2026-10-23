@@ -53,6 +53,19 @@ def test_booking_implementation_has_no_calendar_logic():
     assert "calendar" not in implementation.javascript.lower()
 
 
+def test_inquiry_provides_direct_link_to_its_option():
+    configuration = build_booking_configuration()
+    configuration["inquiry_types"] = [
+        {"id": "pedir-presupuesto", "name": "Pedir presupuesto"}
+    ]
+
+    implementation = build_booking_implementation(configuration)
+
+    assert 'href="/reservar?service_id=pedir-presupuesto"' in implementation.html
+    assert "Pedir presupuesto" in implementation.html
+    assert "mailto:" not in implementation.html
+
+
 def test_booking_implementation_requires_services():
 
     configuration = build_booking_configuration()

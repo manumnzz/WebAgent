@@ -246,7 +246,9 @@ print(state.development)
 # VALIDATOR
 # ============================================================
 
-state.validation = validate_website()
+state.validation = validate_website(
+    state.capability_inputs.booking_configuration,
+)
 
 print("\n--- VALIDATION ---")
 print(state.validation.model_dump_json(indent=2))
@@ -280,7 +282,9 @@ while (
         state.development.model_dump_json(indent=2)
     )
 
-    state.validation = validate_website()
+    state.validation = validate_website(
+        state.capability_inputs.booking_configuration,
+    )
 
     print(
         f"\n--- VALIDATION AFTER REPAIR {repair_attempt} ---"

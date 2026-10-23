@@ -121,7 +121,7 @@
 
 <div class="booking-container">
 
-    <h1>Citas y propuestas de visita</h1>
+    <h1>Citas y solicitudes</h1>
 
     <div class="field">
         <label for="service">¿Qué necesitas?</label>
@@ -250,10 +250,19 @@
         return optionsById.get(serviceSelect.value)?.mode === "inquiry";
     }
 
+    function isBudgetInquiry() {
+        return isInquiry() && /presupuest/i.test(
+            optionsById.get(serviceSelect.value)?.name ?? ""
+        );
+    }
+
     function updateOptionExplanation() {
         const pending = isPending();
         const inquiry = isInquiry();
-        explanation.textContent = inquiry
+        const budget = isBudgetInquiry();
+        explanation.textContent = budget
+            ? "Describe el trabajo que necesitas. El negocio revisará tu solicitud y contactará contigo; todavía no hay un presupuesto confirmado."
+            : inquiry
             ? "Describe lo que necesitas. El negocio te responderá; no estás reservando una hora."
             : pending
                 ? "Elige una hora de llegada propuesta. El negocio confirmará contigo si tiene espacio antes de que acudas; no se reserva el tiempo del trabajo."
@@ -263,11 +272,14 @@
         document.getElementById("time-label").textContent = pending
             ? "Hora de llegada propuesta"
             : "Hora disponible";
-        document.getElementById("notes-label").textContent = (pending || inquiry)
+        document.getElementById("notes-label").textContent = budget
+            ? "Detalles para el presupuesto *"
+            : (pending || inquiry)
             ? "Motivo de la consulta o visita *"
             : "Notas";
         notesInput.required = pending || inquiry;
-        submitLabel.textContent = inquiry ? "Enviar consulta"
+        submitLabel.textContent = budget ? "Solicitar presupuesto"
+            : inquiry ? "Enviar consulta"
             : pending ? "Enviar propuesta de llegada"
             : "Confirmar reserva";
     }
@@ -306,7 +318,15 @@
 
             serviceSelect.appendChild(option);
         }
+        const requestedOptionId = new URLSearchParams(window.location.search)
+            .get("service_id");
+        if (requestedOptionId && optionsById.has(requestedOptionId)) {
+            serviceSelect.value = requestedOptionId;
+        }
         updateOptionExplanation();
+        if (serviceSelect.value && !isInquiry() && dateInput.value) {
+            await loadAvailability();
+        }
     }
 
 
@@ -526,7 +546,9 @@
                 await response.json();
 
             showMessage(inquiry
-                ? "Consulta recibida. El negocio se pondrá en contacto contigo."
+                ? isBudgetInquiry()
+                    ? "Solicitud de presupuesto recibida. El negocio revisará los datos y se pondrá en contacto contigo."
+                    : "Consulta recibida. El negocio se pondrá en contacto contigo."
                 : pending
                     ? `Propuesta recibida para las ${selectedTime}. El negocio debe confirmarla contigo antes de que acudas.`
                     : `Reserva confirmada: ${confirmation.service_name} a las ${selectedTime}.`,

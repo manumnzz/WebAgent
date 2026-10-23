@@ -12,6 +12,8 @@ Una llegada pendiente ocupa visualmente un intervalo de `slot_interval_minutes` 
 
 El formulario de encargo guarda `booking.appointment_modes` para las opciones sin duración. `pending_arrival` pide una hora propuesta; `inquiry` no pide hora. Los JSON antiguos sin este campo conservan su significado previo: una opción sin duración es una consulta, no se convierte silenciosamente en una llegada.
 
+Si el negocio ofrece presupuestos, añade «Solicitar presupuesto» a `appointment_types` con modo `inquiry` y sin duración. Los botones de presupuesto de la web generada deben apuntar a `/reservar?service_id=solicitar-presupuesto`, que abre directamente esa opción. No se crea un formulario `mailto:` duplicado para ese mismo trámite. Las citas confirmadas se crean en verde, las propuestas de llegada en amarillo y las consultas sin hora en azul, usando los colores disponibles de Google Calendar. El color identifica el tipo; cambiarlo manualmente no confirma ni rechaza la solicitud ante el cliente.
+
 Al generar, WebAgent incorpora las tres clases de opción en `config/booking.json`. El servidor existente (`api.main:app`) sirve `/reservar` y los endpoints `/booking`, `/booking/requests` y `/booking/inquiries`. El evento solo se comunica como recibido cuando Google Calendar devuelve su identificador.
 
 **Antes de usarlo públicamente:** configurar el calendario del negocio y sus credenciales en el servidor, asegurar una forma de atender las solicitudes pendientes y proteger los endpoints públicos contra envíos abusivos. La configuración de desarrollo usa un único `config/booking.json` compartido; generar otra web lo reemplaza, por lo que el despliegue de varios negocios necesita separar la configuración por sitio.

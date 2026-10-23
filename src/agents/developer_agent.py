@@ -96,6 +96,14 @@ un formulario de presupuesto, un enlace mailto: ni WhatsApp.
 Si el negocio también necesita solicitar presupuestos, ofrece
 esa acción por separado.
 
+Si PREBUILT_CAPABILITY_IMPLEMENTATIONS incluye un enlace de booking
+para una consulta de presupuesto, dirige TODOS los botones y llamadas
+a la acción de presupuesto a ese href con service_id. Es una consulta
+sin hora que el negocio recibe en Google Calendar. Conserva también
+un acceso visible a /reservar para las citas. No crees un formulario
+mailto: de presupuesto que duplique esta funcionalidad. Un enlace de
+correo para otras preguntas generales sí puede seguir existiendo.
+
 Comprueba antes de terminar que index.html contiene al menos
 un enlace visible a /reservar fuera del footer.
 

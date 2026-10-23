@@ -5,8 +5,12 @@ from validation.checks.filesystem_checks import validate_filesystem
 from validation.checks.html_checks import validate_html
 from validation.checks.css_checks import validate_css
 from validation.checks.javascript_checks import validate_javascript
+from validation.checks.booking_links import validate_booking_inquiry_links
+from capabilities.models.booking import BookingConfiguration
 
-def validate_website() -> ValidationResult:
+def validate_website(
+    booking_configuration: BookingConfiguration | None = None,
+) -> ValidationResult:
 
     errors: list[ValidationIssue] = []
 
@@ -21,6 +25,10 @@ def validate_website() -> ValidationResult:
 
         if content.strip():
             errors.extend(validate_html(content))
+            if booking_configuration is not None:
+                errors.extend(validate_booking_inquiry_links(
+                    content, booking_configuration,
+                ))
 
     #styles.css
     styles_path = WEBSITE_ROOT / "styles.css"

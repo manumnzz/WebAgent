@@ -14,6 +14,13 @@ from capabilities.models.booking import (
 
 class GoogleCalendarProvider(CalendarProvider):
 
+    # Google Calendar event palette: basil, banana and blueberry.
+    EVENT_COLORS = {
+        "confirmed": "10",
+        "pending_arrival": "5",
+        "inquiry": "9",
+    }
+
     def __init__(
         self,
         service,
@@ -135,6 +142,7 @@ class GoogleCalendarProvider(CalendarProvider):
             ] = request.phone
 
         event = {
+            "colorId": self.EVENT_COLORS["confirmed"],
             "summary": (
                 f"{request.first_name} "
                 f"{request.last_name} "
@@ -230,6 +238,7 @@ class GoogleCalendarProvider(CalendarProvider):
             description.append(f"Email del cliente: {request.email}")
 
         event = {
+            "colorId": self.EVENT_COLORS["pending_arrival"],
             "summary": (
                 f"[PENDIENTE] {option_name} — "
                 f"{request.first_name} {request.last_name}"
@@ -265,8 +274,14 @@ class GoogleCalendarProvider(CalendarProvider):
         day: date,
         option_name: str,
     ) -> str:
+        is_budget = "presupuest" in option_name.casefold()
         description = [
-            "CONSULTA PENDIENTE: contacta con el cliente para responder.",
+            (
+                "PRESUPUESTO PENDIENTE: revisa la solicitud y contacta "
+                "con el cliente."
+                if is_budget else
+                "CONSULTA PENDIENTE: contacta con el cliente para responder."
+            ),
             f"Motivo: {request.notes}",
             f"Cliente: {request.first_name} {request.last_name}",
         ]
@@ -275,8 +290,10 @@ class GoogleCalendarProvider(CalendarProvider):
         if request.email:
             description.append(f"Email del cliente: {request.email}")
         event = {
+            "colorId": self.EVENT_COLORS["inquiry"],
             "summary": (
-                f"[CONSULTA PENDIENTE] {option_name} — "
+                f"[{'PRESUPUESTO' if is_budget else 'CONSULTA'} PENDIENTE] "
+                f"{option_name} — "
                 f"{request.first_name} {request.last_name}"
             ),
             "description": "\n".join(description),
