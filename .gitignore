@@ -11,3 +11,5 @@ token.json
 
 # Encargos y archivos de clientes
 /data/intake/
+
+/config/booking.json
