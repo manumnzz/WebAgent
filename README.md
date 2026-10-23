@@ -314,7 +314,7 @@ Cada envío se guarda por separado en:
 data/intake/<submission_id>/project_input.json
 ```
 
-`data/intake/` está excluido de Git. El formulario actual recoge negocio, servicios, contacto público, objetivo, estilo, referencias, funcionalidades y notas. Todavía no incluye subida de archivos ni preguntas condicionales de reservas. Enviar el formulario no ejecuta los agentes.
+`data/intake/` está excluido de Git. El formulario recoge negocio, servicios, contacto público, objetivo, estilo, referencias, funcionalidades y notas. Si se solicita Booking, pregunta por las opciones de cita, la duración cuando se conoce, el modo de las opciones sin duración, la zona horaria y el horario semanal. Todavía no permite subir archivos. Enviar el formulario guarda el encargo; la generación de la web se ejecuta después con su referencia.
 
 ### Generar la web de un encargo
 
@@ -332,7 +332,7 @@ Sin `--input`, se carga `config/project_input.json`:
 
 La generación requiere `OPENAI_API_KEY`. El encargo original se conserva en `ProjectState.project_input`; BusinessAgent analiza su contenido y el adaptador conserva los campos explícitos del cliente.
 
-**Límites actuales:** cada generación sobrescribe `output/website` y `config/booking.json` compartidos. Booking todavía usa duraciones y horario temporales definidos en `main.py`; no son datos confirmados del cliente. Las galerías y reseñas de ejemplo se han retirado de `main.py` y faltan recursos reales.
+**Límites actuales:** cada generación sobrescribe `output/website` y el archivo local `config/booking.json`. La configuración de Booking se construye a partir del encargo. Esta versión utiliza una sola configuración activa por servidor; para alojar varios negocios a la vez habrá que separar sus salidas, configuraciones y credenciales. Las galerías y reseñas de ejemplo se han retirado de `main.py` y faltan recursos reales.
 
 ### Ver la web generada y las reservas
 
@@ -398,15 +398,17 @@ BookingConfiguration
 │   ├── id
 │   ├── name
 │   └── duration_minutes
+├── pending_arrival_types[]
+├── inquiry_types[]
 ├── weekly_schedule[]
 │   ├── weekday
 │   └── ranges[]
 └── slot_interval_minutes
 ```
 
-La configuración se carga actualmente desde `config/booking.json` mediante `config_loader.py`. El fichero actual sirve como configuración de desarrollo; el objetivo es que WebAgent lo construya automáticamente a partir de la información del negocio y de datos adicionales recogidos cuando falten.
+WebAgent genera `config/booking.json` a partir del encargo y `config_loader.py` lo carga al arrancar la API. Es un archivo local generado que no se versiona en Git. Las opciones con duración crean reservas confirmadas; las llegadas propuestas y las consultas sin hora se registran como pendientes para que el negocio las atienda.
 
-Los `service_id` son identificadores técnicos. La dirección prevista es generarlos de forma determinista a partir del nombre del servicio y persistirlos en la configuración, evitando pedir al negocio que gestione IDs manualmente.
+Los `service_id` se generan de forma determinista a partir del nombre de la opción y se guardan en la configuración; el negocio no tiene que introducir identificadores técnicos.
 
 ### Availability Engine
 
@@ -518,23 +520,21 @@ API HTTP                       ✅
 Configuración externa          ✅
 Frontend /reservar             ✅
 Reserva real navegador → GCal  ✅
-Integración Capability Registry ⏳
-Generación automática config   ⏳
+Integración Capability Registry ✅
+Generación automática config   ✅
 Information Collector          ⏳
 ```
 
-Por tanto, **Booking V1 es funcional como subsistema**, pero todavía no se considera una capability completamente terminada hasta integrarla en el workflow normal de WebAgent.
+Booking V1 está integrada en la generación de webs: el formulario de encargo aporta la configuración, la web enlaza con `/reservar` y las reservas o solicitudes se registran en Google Calendar. La recogida automática de información faltante y el despliegue independiente de varios negocios siguen pendientes.
 
-### Evolución prevista de Booking
-
-Siguiente fase:
+### Flujo actual de Booking
 
 ```text
-BusinessProfile
+ProjectInput (formulario)
       ↓
-Information Collector
+BookingConfigurationDraft
       ↓
-Booking Configuration Builder
+ConfigurationReadiness / Finalizer
       ↓
 BookingConfiguration
       ↓
@@ -627,7 +627,7 @@ El número de intentos de reparación está limitado para evitar loops infinitos
 
 ```text
 config/
-└── booking.json
+└── booking.json              # generado localmente; ignorado por Git
 
 scripts/
 └── test_manual_google_calendar.py
@@ -781,11 +781,11 @@ El backlog activo se gestiona mediante GitHub Issues.
 
 - [#2 — Núcleo de seis capabilities reutilizables](https://github.com/manumnzz/WebAgent/issues/2): WhatsApp, Maps, Contact form, Gallery, Reviews y Booking V1 integrado.
 - [#7 — Formulario de encargos V1 e integración con el pipeline](https://github.com/manumnzz/WebAgent/issues/7): entrada estructurada, validación, almacenamiento por UUID y generación mediante `--input`.
+- [#8 — Configuración de Booking en el formulario](https://github.com/manumnzz/WebAgent/issues/8): opciones, duraciones y horarios recogidos en el encargo; configuración generada sin datos temporales en `main.py`.
 
 ### En progreso y siguiente paso
 
 - [#4 — Recolección de información faltante](https://github.com/manumnzz/WebAgent/issues/4): existe la infraestructura de borradores y detección; falta la recogida real.
-- [#8 — Configuración de Booking en el formulario](https://github.com/manumnzz/WebAgent/issues/8): siguiente implementación; eliminar duraciones/horarios temporales y preguntar lo pendiente.
 
 ### Pendiente
 
