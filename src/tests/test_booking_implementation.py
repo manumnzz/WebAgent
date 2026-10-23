@@ -40,7 +40,7 @@ def test_build_booking_implementation():
 
     assert 'href="/reservar"' in implementation.html
 
-    assert "Reservar cita" in implementation.html
+    assert "Ver citas y solicitudes" in implementation.html
 
 
 def test_booking_implementation_has_no_calendar_logic():

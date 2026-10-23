@@ -17,6 +17,8 @@ class BusinessProfile(BaseModel):
     requested_features: list[str] = Field(
         default_factory=list
     )
+    appointment_request_types: list[str] = Field(default_factory=list)
+    pending_arrival_types: list[str] = Field(default_factory=list)
 
     contact: ContactInfo = Field(
         default_factory=ContactInfo

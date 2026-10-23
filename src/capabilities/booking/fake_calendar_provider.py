@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from uuid import uuid4
 
 from capabilities.booking.calendar_provider import (
@@ -7,6 +7,8 @@ from capabilities.booking.calendar_provider import (
 from capabilities.models.booking import (
     BookingRequest,
     CalendarBusyInterval,
+    PendingArrivalRequest,
+    InquiryRequest,
 )
 
 class FakeCalendarProvider(CalendarProvider):
@@ -23,6 +25,8 @@ class FakeCalendarProvider(CalendarProvider):
             str,
             dict,
         ] = {}
+        self.pending_events: dict[str, dict] = {}
+        self.inquiry_events: dict[str, dict] = {}
 
     def get_busy_intervals(
             self,
@@ -64,6 +68,38 @@ class FakeCalendarProvider(CalendarProvider):
       )
 
       return event_id
+
+    def create_pending_arrival_event(
+        self,
+        request: PendingArrivalRequest,
+        start: datetime,
+        end: datetime,
+        option_name: str,
+    ) -> str:
+        event_id = str(uuid4())
+        self.pending_events[event_id] = {
+            "request": request,
+            "start": start,
+            "end": end,
+            "option_name": option_name,
+            "status": "pending",
+        }
+        return event_id
+
+    def create_inquiry_event(
+        self,
+        request: InquiryRequest,
+        day: date,
+        option_name: str,
+    ) -> str:
+        event_id = str(uuid4())
+        self.inquiry_events[event_id] = {
+            "request": request,
+            "day": day,
+            "option_name": option_name,
+            "status": "pending",
+        }
+        return event_id
 
     def cancel_event(
             self,

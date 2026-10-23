@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from capabilities.booking.calendar_provider import (
     CalendarProvider,
@@ -7,6 +7,8 @@ from capabilities.models.booking import (
     BookingBusinessInfo,
     BookingRequest,
     CalendarBusyInterval,
+    PendingArrivalRequest,
+    InquiryRequest,
 )
 
 
@@ -208,6 +210,97 @@ class GoogleCalendarProvider(CalendarProvider):
             )
             .execute()
         )
+
+    def create_pending_arrival_event(
+        self,
+        request: PendingArrivalRequest,
+        start: datetime,
+        end: datetime,
+        option_name: str,
+    ) -> str:
+        description = [
+            "PROPUESTA PENDIENTE: confirma la hora y la capacidad "
+            "antes de citar al cliente.",
+            f"Motivo: {request.notes}",
+            f"Cliente: {request.first_name} {request.last_name}",
+        ]
+        if request.phone:
+            description.append(f"Teléfono del cliente: {request.phone}")
+        if request.email:
+            description.append(f"Email del cliente: {request.email}")
+
+        event = {
+            "summary": (
+                f"[PENDIENTE] {option_name} — "
+                f"{request.first_name} {request.last_name}"
+            ),
+            "description": "\n".join(description),
+            "start": {"dateTime": start.isoformat()},
+            "end": {"dateTime": end.isoformat()},
+            "transparency": "transparent",
+            "visibility": "private",
+            "status": "tentative",
+            "extendedProperties": {
+                "private": {
+                    "webagent_booking": "true",
+                    "webagent_status": "pending_arrival",
+                    "request_type_id": request.service_id,
+                },
+            },
+        }
+        created = (
+            self.service.events().insert(
+                calendarId=self.calendar_id,
+                body=event,
+            ).execute()
+        )
+        event_id = created.get("id")
+        if not event_id:
+            raise RuntimeError("Google Calendar no devolvió un identificador de evento.")
+        return event_id
+
+    def create_inquiry_event(
+        self,
+        request: InquiryRequest,
+        day: date,
+        option_name: str,
+    ) -> str:
+        description = [
+            "CONSULTA PENDIENTE: contacta con el cliente para responder.",
+            f"Motivo: {request.notes}",
+            f"Cliente: {request.first_name} {request.last_name}",
+        ]
+        if request.phone:
+            description.append(f"Teléfono del cliente: {request.phone}")
+        if request.email:
+            description.append(f"Email del cliente: {request.email}")
+        event = {
+            "summary": (
+                f"[CONSULTA PENDIENTE] {option_name} — "
+                f"{request.first_name} {request.last_name}"
+            ),
+            "description": "\n".join(description),
+            "start": {"date": day.isoformat()},
+            "end": {"date": (day + timedelta(days=1)).isoformat()},
+            "transparency": "transparent",
+            "visibility": "private",
+            "status": "tentative",
+            "extendedProperties": {
+                "private": {
+                    "webagent_booking": "true",
+                    "webagent_status": "pending_inquiry",
+                    "request_type_id": request.service_id,
+                },
+            },
+        }
+        created = self.service.events().insert(
+            calendarId=self.calendar_id,
+            body=event,
+        ).execute()
+        event_id = created.get("id")
+        if not event_id:
+            raise RuntimeError("Google Calendar no devolvió un identificador de evento.")
+        return event_id
 
     @staticmethod
     def _parse_datetime(

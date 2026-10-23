@@ -33,13 +33,15 @@ def test_finalize_booking_configuration():
         timezone="Europe/Madrid",
         weekly_schedule=[
             BookingDaySchedule(
-                weekday="monday",
-                ranges=[
-                    BookingTimeRange(
-                        start="09:00",
-                        end="14:00",
-                    )
-                ],
+                weekday=weekday,
+                ranges=(
+                    [BookingTimeRange(start="09:00", end="14:00")]
+                    if weekday == "monday" else []
+                ),
+            )
+            for weekday in (
+                "monday", "tuesday", "wednesday", "thursday",
+                "friday", "saturday", "sunday",
             )
         ],
         slot_interval_minutes=30,

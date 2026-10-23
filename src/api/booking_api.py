@@ -10,9 +10,14 @@ from capabilities.booking.booking_manager import (
     BookingConfirmation,
     BookingManager,
     BookingSlotUnavailableError,
+    PendingArrivalConfirmation,
+    InquiryConfirmation,
 )
 from capabilities.models.booking import (
     BookingRequest,
+    PendingArrivalRequest,
+    PendingArrivalType,
+    InquiryRequest,
 )
 from capabilities.models.booking import (
     BookingRequest,
@@ -28,6 +33,13 @@ class AvailabilityResponse(BaseModel):
     booking_date: date
     service_id: str
     available_slots: list[str]
+
+
+class AppointmentOption(BaseModel):
+    id: str
+    name: str
+    mode: str
+    duration_minutes: int | None = None
 
 
 def create_booking_app(
@@ -85,6 +97,26 @@ def create_booking_app(
             ],
         )
 
+    @app.get(
+        "/booking/request-availability",
+        response_model=AvailabilityResponse,
+    )
+    def get_request_availability(
+        booking_date: date,
+        service_id: str,
+    ) -> AvailabilityResponse:
+        try:
+            slots = manager.get_available_arrival_slots(
+                booking_date=booking_date, option_id=service_id
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return AvailabilityResponse(
+            booking_date=booking_date,
+            service_id=service_id,
+            available_slots=[slot.strftime("%H:%M") for slot in slots],
+        )
+
     @app.post(
         "/booking",
         response_model=BookingConfirmation,
@@ -110,6 +142,33 @@ def create_booking_app(
                 status_code=400,
                 detail=str(exc),
             ) from exc
+
+    @app.post(
+        "/booking/requests",
+        response_model=PendingArrivalConfirmation,
+        status_code=201,
+    )
+    def create_pending_arrival(
+        request: PendingArrivalRequest,
+    ) -> PendingArrivalConfirmation:
+        try:
+            return manager.create_pending_arrival(request)
+        except BookingSlotUnavailableError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post(
+        "/booking/inquiries",
+        response_model=InquiryConfirmation,
+        status_code=201,
+    )
+    def create_inquiry(request: InquiryRequest) -> InquiryConfirmation:
+        try:
+            return manager.create_inquiry(request)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     @app.get(
         "/booking/services",
         response_model=list[BookingService],
@@ -117,6 +176,28 @@ def create_booking_app(
     def get_services() -> list[BookingService]:
 
         return manager.configuration.services
+
+    @app.get(
+        "/booking/options",
+        response_model=list[AppointmentOption],
+    )
+    def get_appointment_options() -> list[AppointmentOption]:
+        confirmed = [
+            AppointmentOption(
+                id=service.id, name=service.name,
+                mode="confirmed", duration_minutes=service.duration_minutes,
+            )
+            for service in manager.configuration.services
+        ]
+        pending = [
+            AppointmentOption(id=option.id, name=option.name, mode="pending")
+            for option in manager.configuration.pending_arrival_types
+        ]
+        inquiries = [
+            AppointmentOption(id=option.id, name=option.name, mode="inquiry")
+            for option in manager.configuration.inquiry_types
+        ]
+        return confirmed + pending + inquiries
 
     if WEBSITE_ROOT.exists():
         app.mount(

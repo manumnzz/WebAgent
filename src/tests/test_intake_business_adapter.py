@@ -74,3 +74,24 @@ def test_business_input_contains_client_information():
     assert "Apex Barber Club" in context
     assert "Barbería en Sevilla." in context
     assert '"booking"' in context
+
+
+def test_pending_arrival_keeps_booking_instead_of_switching_to_contact():
+    project_input = ProjectInput(
+        business_name="Taller Prueba",
+        business_description="Reparación de coches.",
+        appointment_types=["Reparación de avería"],
+        requested_features=[RequestedFeature.BOOKING],
+        contact=BusinessContactInput(email="taller@example.com"),
+    )
+    agent_result = BusinessProfile(
+        name="Taller Prueba", business_type="taller", location=None,
+        services=["Reparación de avería"], main_goal=None,
+        desired_style=[], requested_features=["booking"],
+    )
+
+    result = apply_explicit_business_data(agent_result, project_input)
+
+    assert result.appointment_request_types == ["Reparación de avería"]
+    assert result.requested_features == ["booking"]
+    assert agent_result.requested_features == ["booking"]

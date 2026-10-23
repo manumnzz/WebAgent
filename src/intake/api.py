@@ -5,7 +5,13 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from intake.models import ProjectInput
+from intake.booking_adapter import build_booking_draft_from_input
 from intake.storage import save_project_input
+
+from capabilities.booking.configuration_builder import (
+    build_booking_service_drafts,
+)
+from capabilities.models.booking import BookingServiceDraft
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -19,6 +25,8 @@ class IntakeReceipt(BaseModel):
     submission_id: str
     status: str
 
+class BookingServiceInput(BaseModel):
+    services: list[str]
 
 def create_intake_app(
     storage_directory: str | Path | None = None,
@@ -48,6 +56,11 @@ def create_intake_app(
         project_input: ProjectInput,
     ) -> IntakeReceipt:
         try:
+            build_booking_draft_from_input(project_input)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+
+        try:
             submission_id = save_project_input(
                 project_input,
                 storage_path,
@@ -65,6 +78,23 @@ def create_intake_app(
             submission_id=submission_id,
             status="received",
         )
+
+    @app.post(
+        "/intake/booking-services",
+        response_model=list[BookingServiceDraft],
+    )
+    def prepare_booking_services(
+        payload: BookingServiceInput,
+    ) -> list[BookingServiceDraft]:
+        try:
+            return build_booking_service_drafts(
+                payload.services
+            )
+        except ValueError as error:
+            raise HTTPException(
+                status_code=422,
+                detail=str(error),
+            ) from error
 
     return app
 

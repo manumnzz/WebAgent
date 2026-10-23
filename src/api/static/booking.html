@@ -6,22 +6,33 @@
     <title>Reservar cita</title>
 
     <style>
+        :root {
+            --booking-bg: #f5f5f5;
+            --booking-surface: #fff;
+            --booking-text: #222;
+            --booking-input-bg: #fff;
+            --booking-border: #ccc;
+            --booking-accent: #111;
+            --booking-accent-text: #fff;
+            --booking-slot-bg: #eee;
+            --booking-font: system-ui, sans-serif;
+        }
         * {
             box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            font-family: system-ui, sans-serif;
-            background: #f5f5f5;
-            color: #222;
+            font-family: var(--booking-font);
+            background: var(--booking-bg);
+            color: var(--booking-text);
         }
 
         .booking-container {
             max-width: 600px;
             margin: 60px auto;
             padding: 32px;
-            background: white;
+            background: var(--booking-surface);
             border-radius: 16px;
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
         }
@@ -48,15 +59,22 @@
             padding: 12px;
             font: inherit;
             border-radius: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--booking-border);
+        }
+
+        input,
+        select,
+        textarea {
+            background: var(--booking-input-bg);
+            color: var(--booking-text);
         }
 
         button {
             border: 0;
             cursor: pointer;
             font-weight: 600;
-            background: #111;
-            color: white;
+            background: var(--booking-accent);
+            color: var(--booking-accent-text);
         }
 
         button:hover {
@@ -70,13 +88,13 @@
         }
 
         .slot {
-            background: #eee;
-            color: #222;
+            background: var(--booking-slot-bg);
+            color: var(--booking-text);
         }
 
         .slot.selected {
-            background: #111;
-            color: white;
+            background: var(--booking-accent);
+            color: var(--booking-accent-text);
         }
 
         .message {
@@ -96,20 +114,23 @@
             background: #fdeaea;
         }
     </style>
+    <link rel="stylesheet" href="/booking-theme.css">
 </head>
 
 <body>
 
 <div class="booking-container">
 
-    <h1>Reserva tu cita</h1>
+    <h1>Citas y propuestas de visita</h1>
 
     <div class="field">
-        <label for="service">Servicio</label>
+        <label for="service">¿Qué necesitas?</label>
         <select id="service">
             <option value="">Selecciona un servicio</option>
         </select>
     </div>
+
+    <p id="appointment-explanation" role="status"></p>
 
     <div class="field">
         <label for="booking-date">Fecha</label>
@@ -120,7 +141,7 @@
     </div>
 
     <div class="field">
-        <label>Hora disponible</label>
+        <label id="time-label">Hora disponible</label>
 
         <div
             id="slots"
@@ -175,7 +196,7 @@
         </div>
 
         <div class="field">
-            <label for="notes">
+            <label for="notes" id="notes-label">
                 Notas
             </label>
 
@@ -186,7 +207,7 @@
         </div>
 
         <button type="submit">
-            Confirmar reserva
+            <span id="submit-label">Confirmar reserva</span>
         </button>
 
     </form>
@@ -215,18 +236,61 @@
     const message =
         document.getElementById("message");
 
+    const explanation = document.getElementById("appointment-explanation");
+    const submitLabel = document.getElementById("submit-label");
+    const notesInput = document.getElementById("notes");
+    const submitButton = form.querySelector('button[type="submit"]');
+    const optionsById = new Map();
+
+    function isPending() {
+        return optionsById.get(serviceSelect.value)?.mode === "pending";
+    }
+
+    function isInquiry() {
+        return optionsById.get(serviceSelect.value)?.mode === "inquiry";
+    }
+
+    function updateOptionExplanation() {
+        const pending = isPending();
+        const inquiry = isInquiry();
+        explanation.textContent = inquiry
+            ? "Describe lo que necesitas. El negocio te responderá; no estás reservando una hora."
+            : pending
+                ? "Elige una hora de llegada propuesta. El negocio confirmará contigo si tiene espacio antes de que acudas; no se reserva el tiempo del trabajo."
+                : "La cita se confirma al terminar la reserva.";
+        dateInput.closest(".field").hidden = inquiry;
+        slotsContainer.closest(".field").hidden = inquiry;
+        document.getElementById("time-label").textContent = pending
+            ? "Hora de llegada propuesta"
+            : "Hora disponible";
+        document.getElementById("notes-label").textContent = (pending || inquiry)
+            ? "Motivo de la consulta o visita *"
+            : "Notas";
+        notesInput.required = pending || inquiry;
+        submitLabel.textContent = inquiry ? "Enviar consulta"
+            : pending ? "Enviar propuesta de llegada"
+            : "Confirmar reserva";
+    }
+
     let selectedTime = null;
 
 
     async function loadServices() {
 
         const response = await fetch(
-            "/booking/services"
+            "/booking/options"
         );
+
+        if (!response.ok) {
+            showMessage("No se han podido cargar las citas.", "error");
+            return;
+        }
 
         const services = await response.json();
 
         for (const service of services) {
+
+            optionsById.set(service.id, service);
 
             const option =
                 document.createElement("option");
@@ -234,10 +298,15 @@
             option.value = service.id;
 
             option.textContent =
-                `${service.name} (${service.duration_minutes} min)`;
+                service.mode === "pending"
+                    ? `${service.name} (hora por confirmar)`
+                    : service.mode === "inquiry"
+                        ? `${service.name} (consulta sin hora)`
+                    : `${service.name} (${service.duration_minutes} min)`;
 
             serviceSelect.appendChild(option);
         }
+        updateOptionExplanation();
     }
 
 
@@ -245,6 +314,10 @@
 
         selectedTime = null;
         slotsContainer.innerHTML = "";
+
+        if (isInquiry()) {
+            return;
+        }
 
         const serviceId =
             serviceSelect.value;
@@ -262,9 +335,10 @@
                 booking_date: bookingDate,
             });
 
-        const response = await fetch(
-            `/booking/availability?${params}`
-        );
+        const route = isPending()
+            ? "/booking/request-availability"
+            : "/booking/availability";
+        const response = await fetch(`${route}?${params}`);
 
         if (!response.ok) {
 
@@ -281,7 +355,7 @@
         if (data.available_slots.length === 0) {
 
             slotsContainer.textContent =
-                "No hay horarios disponibles.";
+                "No hay horarios disponibles para proponer.";
 
             return;
         }
@@ -337,7 +411,7 @@
 
             event.preventDefault();
 
-            if (!selectedTime) {
+            if (!isInquiry() && !selectedTime) {
 
                 showMessage(
                     "Selecciona una hora.",
@@ -390,21 +464,22 @@
                 service_id:
                     serviceSelect.value,
 
-                booking_date:
-                    dateInput.value,
-
-                booking_time:
-                    `${selectedTime}:00`,
-
-                notes:
-                    document
-                        .getElementById("notes")
-                        .value || null,
+                notes: notesInput.value.trim() || null,
             };
 
+            const pending = isPending();
+            const inquiry = isInquiry();
+            if (!inquiry) {
+                body.booking_date = dateInput.value;
+                body.booking_time = `${selectedTime}:00`;
+            }
+            const route = inquiry ? "/booking/inquiries"
+                : pending ? "/booking/requests" : "/booking";
+            submitButton.disabled = true;
 
+            try {
             const response = await fetch(
-                "/booking",
+                route,
                 {
                     method: "POST",
 
@@ -450,20 +525,27 @@
             const confirmation =
                 await response.json();
 
-            showMessage(
-                `Reserva confirmada: ${confirmation.service_name} a las ${selectedTime}.`,
-                "success"
-            );
+            showMessage(inquiry
+                ? "Consulta recibida. El negocio se pondrá en contacto contigo."
+                : pending
+                    ? `Propuesta recibida para las ${selectedTime}. El negocio debe confirmarla contigo antes de que acudas.`
+                    : `Reserva confirmada: ${confirmation.service_name} a las ${selectedTime}.`,
+                "success");
 
             await loadAvailability();
+            } catch (error) {
+                showMessage("No se ha podido conectar. Inténtalo de nuevo.", "error");
+            } finally {
+                submitButton.disabled = false;
+            }
         }
     );
 
 
-    serviceSelect.addEventListener(
-        "change",
-        loadAvailability
-    );
+    serviceSelect.addEventListener("change", () => {
+        updateOptionExplanation();
+        loadAvailability();
+    });
 
     dateInput.addEventListener(
         "change",
@@ -471,10 +553,12 @@
     );
 
 
-    const today =
-        new Date()
-            .toISOString()
-            .split("T")[0];
+    const localToday = new Date();
+    const today = [
+        localToday.getFullYear(),
+        String(localToday.getMonth() + 1).padStart(2, "0"),
+        String(localToday.getDate()).padStart(2, "0")
+    ].join("-");
 
     dateInput.min = today;
 

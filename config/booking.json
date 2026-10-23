@@ -2,21 +2,28 @@
   "timezone": "Europe/Madrid",
   "services": [
     {
-      "id": "fisioterapia-deportiva",
-      "name": "Fisioterapia deportiva",
+      "id": "cambio-de-neumaticos",
+      "name": "Cambio de Neumáticos",
       "duration_minutes": 60
     },
     {
-      "id": "masaje-terapeutico",
-      "name": "Masaje terapéutico",
-      "duration_minutes": 60
+      "id": "cambio-de-suspension",
+      "name": "Cambio de Suspensión",
+      "duration_minutes": 120
     },
     {
-      "id": "valoracion-inicial",
-      "name": "Valoración inicial",
-      "duration_minutes": 60
+      "id": "reprogramacion",
+      "name": "Reprogramación",
+      "duration_minutes": 120
     }
   ],
+  "pending_arrival_types": [
+    {
+      "id": "diagnostico-de-fallos",
+      "name": "Diagnóstico de fallos"
+    }
+  ],
+  "inquiry_types": [],
   "weekly_schedule": [
     {
       "weekday": "monday",
@@ -24,6 +31,10 @@
         {
           "start": "09:00:00",
           "end": "14:00:00"
+        },
+        {
+          "start": "17:00:00",
+          "end": "21:00:00"
         }
       ]
     },
@@ -33,6 +44,10 @@
         {
           "start": "09:00:00",
           "end": "14:00:00"
+        },
+        {
+          "start": "17:00:00",
+          "end": "21:00:00"
         }
       ]
     },
@@ -42,6 +57,10 @@
         {
           "start": "09:00:00",
           "end": "14:00:00"
+        },
+        {
+          "start": "17:00:00",
+          "end": "21:00:00"
         }
       ]
     },
@@ -51,6 +70,10 @@
         {
           "start": "09:00:00",
           "end": "14:00:00"
+        },
+        {
+          "start": "17:00:00",
+          "end": "21:00:00"
         }
       ]
     },
@@ -60,16 +83,28 @@
         {
           "start": "09:00:00",
           "end": "14:00:00"
+        },
+        {
+          "start": "17:00:00",
+          "end": "21:00:00"
         }
       ]
+    },
+    {
+      "weekday": "saturday",
+      "ranges": []
+    },
+    {
+      "weekday": "sunday",
+      "ranges": []
     }
   ],
   "business": {
-    "name": "Fisio Alameda",
-    "phone": null,
+    "name": "Iron Garage Sevilla",
+    "phone": "615584412",
     "whatsapp": "615584412",
-    "email": "alamedafisio@gmail.com",
-    "address": "Alameda de Hércules, 42, Casco Antiguo, 41002 Sevilla"
+    "email": "mzbuzon@gmail.com",
+    "address": "Juan Ramón Jiménez 25, Sevilla, 41011"
   },
   "slot_interval_minutes": 30
 }

@@ -11,6 +11,8 @@ from capabilities.booking.google_calendar_provider import (
 )
 from capabilities.models.booking import (
     BookingRequest,
+    PendingArrivalRequest,
+    InquiryRequest,
 )
 
 
@@ -216,3 +218,59 @@ def test_google_calendar_cancels_event():
             eventId="google-event-123",
         )
     )
+
+
+def test_pending_arrival_is_private_transparent_and_has_no_guest_invitation():
+    service = build_google_service_mock()
+    service.events.return_value.insert.return_value.execute.return_value = {
+        "id": "pending-event-1"
+    }
+    provider = GoogleCalendarProvider(service=service)
+    request = PendingArrivalRequest(
+        first_name="Manuel", last_name="Buzón",
+        phone="600123123", email="manuel@example.com",
+        service_id="car-dropoff", booking_date=date(2030, 1, 4),
+        booking_time=time(11, 0), notes="El coche no arranca.",
+    )
+    event_id = provider.create_pending_arrival_event(
+        request=request,
+        start=datetime(2030, 1, 4, 11, 0, tzinfo=TIMEZONE),
+        end=datetime(2030, 1, 4, 11, 30, tzinfo=TIMEZONE),
+        option_name="Entrega del vehículo",
+    )
+
+    assert event_id == "pending-event-1"
+    kwargs = service.events.return_value.insert.call_args.kwargs
+    event = kwargs["body"]
+    assert kwargs["calendarId"] == "primary"
+    assert "sendUpdates" not in kwargs
+    assert "attendees" not in event
+    assert event["transparency"] == "transparent"
+    assert event["visibility"] == "private"
+    assert "[PENDIENTE]" in event["summary"]
+    assert "El coche no arranca." in event["description"]
+    assert "600123123" in event["description"]
+    assert event["extendedProperties"]["private"]["webagent_status"] == "pending_arrival"
+
+
+def test_inquiry_is_an_all_day_pending_calendar_item():
+    service = build_google_service_mock()
+    service.events.return_value.insert.return_value.execute.return_value = {
+        "id": "inquiry-1"
+    }
+    provider = GoogleCalendarProvider(service=service)
+    request = InquiryRequest(
+        first_name="Ana", last_name="Pérez", phone="600222333",
+        service_id="quote", notes="Presupuesto para suspensión.",
+    )
+    provider.create_inquiry_event(
+        request=request, day=date(2030, 1, 4),
+        option_name="Pedir presupuesto",
+    )
+    event = service.events.return_value.insert.call_args.kwargs["body"]
+    assert event["start"] == {"date": "2030-01-04"}
+    assert event["end"] == {"date": "2030-01-05"}
+    assert event["transparency"] == "transparent"
+    assert event["visibility"] == "private"
+    assert "attendees" not in event
+    assert "Presupuesto para suspensión." in event["description"]

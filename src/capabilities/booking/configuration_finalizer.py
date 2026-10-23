@@ -27,12 +27,14 @@ def finalize_booking_configuration(
             "Booking necesita timezone."
         )
 
-    if draft.weekly_schedule is None:
+    requires_hours = bool(draft.services or draft.pending_arrival_types)
+
+    if requires_hours and draft.weekly_schedule is None:
         raise ValueError(
             "Booking necesita weekly_schedule."
         )
 
-    if draft.slot_interval_minutes is None:
+    if requires_hours and draft.slot_interval_minutes is None:
         raise ValueError(
             "Booking necesita slot_interval_minutes."
         )
@@ -60,8 +62,10 @@ def finalize_booking_configuration(
     return BookingConfiguration(
         timezone=draft.timezone,
         services=services,
-        weekly_schedule=draft.weekly_schedule,
+        pending_arrival_types=draft.pending_arrival_types,
+        inquiry_types=draft.inquiry_types,
+        weekly_schedule=draft.weekly_schedule or [],
         slot_interval_minutes=(
-            draft.slot_interval_minutes
+            draft.slot_interval_minutes or 30
         ),
     )

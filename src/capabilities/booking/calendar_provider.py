@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import date, datetime
 
 from capabilities.models.booking import (
     BookingRequest,
     CalendarBusyInterval,
+    PendingArrivalRequest,
+    InquiryRequest,
 )
 
 class CalendarProvider(ABC):
@@ -29,6 +31,27 @@ class CalendarProvider(ABC):
         
         Devuelve el identificador del evento creado.
         """
+        pass
+
+    @abstractmethod
+    def create_pending_arrival_event(
+        self,
+        request: PendingArrivalRequest,
+        start: datetime,
+        end: datetime,
+        option_name: str,
+    ) -> str:
+        """Store a proposed arrival without blocking free/busy or inviting the customer."""
+        pass
+
+    @abstractmethod
+    def create_inquiry_event(
+        self,
+        request: InquiryRequest,
+        day: date,
+        option_name: str,
+    ) -> str:
+        """Store a contact inquiry as a non-blocking all-day pending item."""
         pass
 
     @abstractmethod

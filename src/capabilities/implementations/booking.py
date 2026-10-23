@@ -14,9 +14,12 @@ def build_booking_implementation(
         booking_configuration
     )
 
-    if not configuration.services:
+    if not (
+        configuration.services or configuration.pending_arrival_types
+        or configuration.inquiry_types
+    ):
         raise ValueError(
-            "Booking necesita al menos un servicio."
+            "Booking necesita al menos una opción de cita."
         )
 
     html = """
@@ -24,7 +27,7 @@ def build_booking_implementation(
     class="capability-booking"
     href="/reservar"
 >
-    Reservar cita
+    Ver citas y solicitudes
 </a>
 """.strip()
 
@@ -36,7 +39,8 @@ def build_booking_implementation(
         implementation_notes=[
             (
                 "La reserva se realiza mediante la ruta /reservar. "
-                "No implementar lógica de disponibilidad o calendario "
+                "Las llegadas sin duración son solicitudes pendientes de "
+                "confirmación por el negocio. No implementar lógica de calendario "
                 "en el frontend principal."
             ),
             (

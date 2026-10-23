@@ -4,6 +4,7 @@ from capabilities.booking.configuration_builder import (
 from capabilities.booking.configuration_readiness import (
     get_booking_missing_information,
 )
+from capabilities.models.booking import BookingDaySchedule
 
 
 def test_detects_missing_booking_information():
@@ -72,7 +73,17 @@ def test_booking_draft_can_be_complete():
 
     draft.services[0].duration_minutes = 60
 
-    draft.weekly_schedule = []
+    draft.weekly_schedule = [
+        BookingDaySchedule(
+            weekday=weekday,
+            ranges=[{"start": "09:00", "end": "14:00"}]
+            if weekday == "monday" else [],
+        )
+        for weekday in (
+            "monday", "tuesday", "wednesday", "thursday",
+            "friday", "saturday", "sunday",
+        )
+    ]
 
     missing = get_booking_missing_information(
         draft

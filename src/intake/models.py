@@ -2,6 +2,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
+from capabilities.models.booking import BookingCollectedInformation
+
 class RequestedFeature(StrEnum):
     WHATSAPP = "whatsapp"
     CONTACT_FORM = "contact_form"
@@ -25,9 +27,15 @@ class ProjectInput(BaseModel):
 
     services: list[str] = Field(default_factory=list)
 
+    appointment_types: list[str] = Field(
+        default_factory=list
+    )
+
     contact: BusinessContactInput = Field(
         default_factory=BusinessContactInput
     )
+
+    booking: BookingCollectedInformation | None = None
 
     main_goal: str | None = None
 

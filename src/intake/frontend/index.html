@@ -51,6 +51,23 @@
     }
     button:disabled { opacity: .6; cursor: wait; }
     #result { white-space: pre-wrap; overflow-wrap: anywhere; }
+    [hidden] { display: none !important; }
+    select {
+      display: block;
+      width: 100%;
+      margin-top: 6px;
+      padding: 10px;
+      border: 1px solid #b9c2d2;
+      border-radius: 6px;
+      background: white;
+      font: inherit;
+    }
+    .booking-day {
+      padding: 12px 0;
+      border-bottom: 1px solid #e5e9f0;
+    }
+    .bulk-days { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+    .bulk-days label { margin: 0; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -173,10 +190,103 @@
 
         <label>
           <input type="checkbox" name="features" value="booking">
-          Reserva de citas online
+          Citas online y solicitudes de cita o presupuesto
         </label>
       </fieldset>
+      <fieldset id="booking-panel" hidden disabled>
+        <legend>Citas online</legend>
 
+        <p>
+          Escribe qué podrán pedirte tus clientes. Si sabes cuánto dura una
+          opción, el cliente podrá reservarla directamente. Si no, elige si
+          podrá proponer una hora de llegada o hacer una consulta sin hora.
+        </p>
+
+        <label>
+          Citas o solicitudes
+          <textarea
+            name="appointment_types"
+            placeholder="Ej.: Recepción del vehículo&#10;Diagnóstico inicial"
+          ></textarea>
+          <small>Una opción por línea. Ej.: recepción del vehículo o reparación de avería.</small>
+        </label>
+
+        <button type="button" id="copy-business-services">
+          Copiar servicios del negocio
+        </button>
+
+        <small>
+          Puedes quitar o cambiar opciones después de copiarlas.
+        </small>
+
+        <button type="button" id="prepare-booking-services">
+          Actualizar opciones
+        </button>
+
+        <p id="booking-services-status" role="status"></p>
+
+        <div id="booking-service-durations"></div>
+        <small>
+          Indica los minutos si puedes confirmar esa cita al instante.
+          Déjalo vacío si debe esperar tu confirmación o simplemente consultar.
+          No pongas aquí cuánto durará la reparación.
+        </small>
+        <div id="calendar-settings" hidden>
+        <label>
+  Zona horaria del negocio
+  <select name="booking_timezone">
+    <option value="">Pendiente de confirmar</option>
+    <option value="Europe/Madrid">España peninsular y Baleares</option>
+    <option value="Atlantic/Canary">Canarias</option>
+    <option value="other">Otra</option>
+  </select>
+</label>
+
+<label id="custom-timezone-label" hidden>
+  Escribe la zona horaria
+  <input
+    name="booking_custom_timezone"
+    placeholder="Ej.: America/Argentina/Buenos_Aires"
+  >
+</label>
+
+<div id="booking-hour-settings">
+<label>
+  Separación entre horas ofrecidas, en minutos
+  <input
+    name="booking_slot_interval"
+    type="number"
+    min="1"
+    step="1"
+    placeholder="Ej.: 15"
+  >
+  <small>
+    Por ejemplo, 30 ofrece 09:00, 09:30, 10:00...
+    Las propuestas de llegada no bloquean una plaza hasta que las confirmes.
+  </small>
+</label>
+
+<h3>Horario semanal de citas</h3>
+<p>
+  Para un día abierto, escribe uno o varios turnos:
+  09:00-14:00, 16:00-20:00.
+</p>
+
+<div class="booking-day">
+  <strong>Aplicar el mismo horario a varios días</strong>
+  <div id="bulk-weekdays" class="bulk-days"></div>
+  <label>
+    Turnos para los días seleccionados
+    <input id="bulk-booking-ranges" placeholder="09:00-14:00, 16:00-20:00">
+  </label>
+  <button type="button" id="apply-booking-schedule">Aplicar horario</button>
+  <p id="bulk-booking-status" role="status"></p>
+</div>
+
+<div id="booking-weekly-schedule"></div>
+</div>
+        </div>
+      </fieldset>
       <label>
         ¿Hay algo más que debamos saber?
         <textarea name="additional_notes"></textarea>
@@ -204,10 +314,419 @@
         .filter(Boolean);
     }
 
+    const bookingCheckbox = form.querySelector(
+      'input[name="features"][value="booking"]'
+    );
+
+    const bookingPanel = document.querySelector("#booking-panel");
+
+    const prepareServicesButton = document.querySelector(
+      "#prepare-booking-services"
+    );
+
+    const servicesStatus = document.querySelector(
+      "#booking-services-status"
+    );
+
+    const durationsContainer = document.querySelector(
+      "#booking-service-durations"
+    );
+    const calendarSettings = document.querySelector("#calendar-settings");
+    const hourSettings = document.querySelector("#booking-hour-settings");
+
+    const appointmentTypesField = form.elements.namedItem(
+      "appointment_types"
+    );
+
+    const copyServicesButton = document.querySelector(
+      "#copy-business-services"
+    );
+
+    let serviceDurationInputs = [];
+    let preparedServicesSignature = null;
+
+    function updateCalendarVisibility() {
+      calendarSettings.hidden = serviceDurationInputs.length === 0;
+      hourSettings.hidden = !serviceDurationInputs.some(
+        ({ input, mode }) => input.value.trim() !== "" ||
+          mode.value === "pending_arrival"
+      );
+    }
+
+    const timezoneSelect = form.elements.namedItem(
+      "booking_timezone"
+    );
+
+    const customTimezoneLabel = document.querySelector(
+      "#custom-timezone-label"
+    );
+
+    const scheduleContainer = document.querySelector(
+      "#booking-weekly-schedule"
+    );
+
+    const weekdays = [
+      ["monday", "Lunes"],
+      ["tuesday", "Martes"],
+      ["wednesday", "Miércoles"],
+      ["thursday", "Jueves"],
+      ["friday", "Viernes"],
+      ["saturday", "Sábado"],
+      ["sunday", "Domingo"]
+    ];
+
+    const scheduleRows = weekdays.map(([weekday, name]) => {
+      const row = document.createElement("div");
+      row.className = "booking-day";
+
+      const label = document.createElement("label");
+      label.textContent = name;
+
+      const select = document.createElement("select");
+
+      for (const [value, text] of [
+        ["unknown", "Pendiente de confirmar"],
+        ["closed", "Cerrado"],
+        ["open", "Se pueden reservar citas"]
+      ]) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = text;
+        select.append(option);
+      }
+
+      label.append(select);
+
+      const ranges = document.createElement("input");
+      ranges.type = "text";
+      ranges.placeholder = "09:00-14:00, 16:00-20:00";
+      ranges.setAttribute(
+        "aria-label",
+        `Turnos del ${name.toLowerCase()}`
+      );
+      ranges.hidden = true;
+      ranges.disabled = true;
+
+      select.addEventListener("change", () => {
+        const open = select.value === "open";
+        ranges.hidden = !open;
+        ranges.disabled = !open;
+      });
+
+      row.append(label, ranges);
+      scheduleContainer.append(row);
+
+      return { weekday, name, select, ranges };
+    });
+
+    const bulkDays = document.querySelector("#bulk-weekdays");
+    const bulkRanges = document.querySelector("#bulk-booking-ranges");
+    const bulkStatus = document.querySelector("#bulk-booking-status");
+
+    const bulkDayCheckboxes = scheduleRows.map(row => {
+      const label = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = row.weekday;
+      label.append(checkbox, ` ${row.name}`);
+      bulkDays.append(label);
+      return { row, checkbox };
+    });
+
+    document.querySelector("#apply-booking-schedule")
+      .addEventListener("click", () => {
+        const selected = bulkDayCheckboxes
+          .filter(({ checkbox }) => checkbox.checked)
+          .map(({ row }) => row);
+
+        if (!selected.length) {
+          bulkStatus.textContent = "Selecciona al menos un día.";
+          return;
+        }
+
+        try {
+          parseBookingRanges(bulkRanges.value, "horario seleccionado");
+        } catch (error) {
+          bulkStatus.textContent = error.message;
+          return;
+        }
+
+        for (const row of selected) {
+          row.select.value = "open";
+          row.ranges.value = bulkRanges.value.trim();
+          row.select.dispatchEvent(new Event("change"));
+        }
+
+        bulkStatus.textContent = `Horario aplicado a ${selected.length} día(s). Puedes ajustar cada día por separado.`;
+      });
+
+    function updateTimezoneVisibility() {
+      const other = timezoneSelect.value === "other";
+      customTimezoneLabel.hidden = !other;
+
+      form.elements.namedItem(
+        "booking_custom_timezone"
+      ).disabled = !other;
+    }
+
+    timezoneSelect.addEventListener(
+      "change",
+      updateTimezoneVisibility
+    );
+
+    updateTimezoneVisibility();
+
+    function updateBookingVisibility() {
+      const enabled = bookingCheckbox.checked;
+
+      bookingPanel.hidden = !enabled;
+      bookingPanel.disabled = !enabled;
+    }
+
+    copyServicesButton.addEventListener("click", () => {
+      const businessServices = lines(
+        new FormData(form),
+        "services"
+      );
+
+      appointmentTypesField.value = businessServices.join("\n");
+
+      servicesStatus.textContent = businessServices.length
+        ? "Opciones copiadas. Revísalas y pulsa «Actualizar opciones»."
+        : "Escribe primero los servicios del negocio.";
+    });
+
+    appointmentTypesField.addEventListener("input", () => {
+      servicesStatus.textContent =
+        "Pulsa «Actualizar opciones» para indicar cuáles tienen duración.";
+    });
+
+    bookingCheckbox.addEventListener(
+      "change",
+      updateBookingVisibility
+    );
+
+    updateBookingVisibility();
+
+    prepareServicesButton.addEventListener("click", async () => {
+      const services = lines(
+        new FormData(form),
+        "appointment_types"
+      );
+      const signature = JSON.stringify(services);
+
+      prepareServicesButton.disabled = true;
+      servicesStatus.textContent = "Actualizando opciones…";
+
+      try {
+        const response = await fetch("/intake/booking-services", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ services })
+        });
+
+        const body = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            typeof body.detail === "string"
+              ? body.detail
+              : "No se han podido actualizar las opciones."
+          );
+        }
+
+        const currentServices = lines(
+          new FormData(form),
+          "appointment_types"
+        );
+
+        if (signature !== JSON.stringify(currentServices)) {
+          throw new Error(
+            "Las opciones han cambiado. Pulsa «Actualizar opciones» otra vez."
+          );
+        }
+
+        const previousDurations = new Map(
+          serviceDurationInputs.map(({ service, input }) => [
+            service.name,
+            input.value
+          ])
+        );
+        const previousModes = new Map(
+          serviceDurationInputs.map(({ service, mode }) => [
+            service.name, mode.value
+          ])
+        );
+
+        durationsContainer.replaceChildren();
+
+        serviceDurationInputs = body.map(service => {
+          const label = document.createElement("label");
+          label.textContent = `${service.name}: duración en minutos (opcional)`;
+
+          const input = document.createElement("input");
+          input.type = "number";
+          input.min = "1";
+          input.step = "1";
+          input.placeholder = "Vacío = hora propuesta, pendiente de confirmar";
+          input.value = previousDurations.get(service.name) ?? "";
+          const modeLabel = document.createElement("label");
+          modeLabel.textContent = "Si no tiene duración:";
+          const mode = document.createElement("select");
+          for (const [value, title] of [
+            ["pending_arrival", "Proponer hora de llegada (pendiente de confirmar)"],
+            ["inquiry", "Enviar consulta sin elegir hora"]
+          ]) {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = title;
+            mode.append(option);
+          }
+          mode.value = previousModes.get(service.name) ?? "pending_arrival";
+          modeLabel.append(mode);
+          modeLabel.hidden = input.value.trim() !== "";
+          input.addEventListener("input", () => {
+            modeLabel.hidden = input.value.trim() !== "";
+            updateCalendarVisibility();
+          });
+          mode.addEventListener("change", updateCalendarVisibility);
+
+          label.append(input);
+          durationsContainer.append(label, modeLabel);
+
+          return { service, input, mode };
+        });
+
+        preparedServicesSignature = signature;
+        updateCalendarVisibility();
+
+        servicesStatus.textContent = body.length
+          ? "Con minutos: reserva confirmada. Vacío: elige propuesta de hora o consulta."
+          : "Escribe primero las citas o solicitudes.";
+
+      } catch (error) {
+        servicesStatus.textContent = error.message;
+
+      } finally {
+        prepareServicesButton.disabled = false;
+      }
+    });
+
+    function parseBookingRanges(value, dayName) {
+      if (!value.trim()) {
+        throw new Error(
+          `Indica los turnos del ${dayName.toLowerCase()}.`
+        );
+      }
+
+      const ranges = value.split(",").map(part => {
+        const match = part.trim().match(
+          /^([01]\d|2[0-3]):([0-5]\d)\s*-\s*([01]\d|2[0-3]):([0-5]\d)$/
+        );
+
+        if (!match) {
+          throw new Error(
+            `Revisa ${dayName.toLowerCase()}: usa 09:00-14:00, 16:00-20:00.`
+          );
+        }
+
+        const start = `${match[1]}:${match[2]}`;
+        const end = `${match[3]}:${match[4]}`;
+
+        if (end <= start) {
+          throw new Error(
+            `La hora final debe ser posterior a la inicial en ${dayName.toLowerCase()}.`
+          );
+        }
+
+        return { start, end };
+      }).sort((a, b) => a.start.localeCompare(b.start));
+
+      for (let index = 1; index < ranges.length; index++) {
+        if (ranges[index].start < ranges[index - 1].end) {
+          throw new Error(
+            `Hay turnos solapados en ${dayName.toLowerCase()}.`
+          );
+        }
+      }
+
+      return ranges;
+    }
+
+    function collectBooking(data) {
+      if (!bookingCheckbox.checked) {
+        return null;
+      }
+
+      const services = lines(data, "appointment_types");
+
+      if (
+        services.length > 0 &&
+        JSON.stringify(services) !== preparedServicesSignature
+      ) {
+        throw new Error(
+          "Pulsa «Actualizar opciones» antes de enviar el encargo."
+        );
+      }
+
+      const serviceDurations = {};
+      const appointmentModes = {};
+
+      if (services.length > 0) {
+        for (const { service, input, mode } of serviceDurationInputs) {
+          if (input.value !== "") {
+            serviceDurations[service.id] = Number(input.value);
+          } else {
+            appointmentModes[service.id] = mode.value;
+          }
+        }
+      }
+
+        const timezone = timezoneSelect.value === "other"
+          ? optionalText(data, "booking_custom_timezone")
+          : optionalText(data, "booking_timezone");
+
+        const intervalText = String(
+          data.get("booking_slot_interval") ?? ""
+        ).trim();
+
+        const weeklySchedule = scheduleRows
+          .filter(row => row.select.value !== "unknown")
+          .map(row => ({
+            weekday: row.weekday,
+            ranges: row.select.value === "open"
+              ? parseBookingRanges(row.ranges.value, row.name)
+              : []
+          }));
+
+        return {
+          service_durations: serviceDurations,
+          appointment_modes: appointmentModes,
+          timezone,
+          weekly_schedule: weeklySchedule.length
+            ? weeklySchedule
+            : null,
+          slot_interval_minutes: intervalText
+            ? Number(intervalText)
+            : null
+        };
+    }
+
     form.addEventListener("submit", async event => {
       event.preventDefault();
 
       const data = new FormData(form);
+
+      let booking;
+
+      try {
+        booking = collectBooking(data);
+      } catch (error) {
+        result.textContent = error.message;
+        return;
+      }
 
       const payload = {
         business_name: String(data.get("business_name") ?? "").trim(),
@@ -229,6 +748,10 @@
           : [],
         reference_websites: lines(data, "reference_websites"),
         requested_features: data.getAll("features"),
+        booking,
+        appointment_types: bookingCheckbox.checked
+          ? lines(data, "appointment_types")
+          : [],
         additional_notes: optionalText(data, "additional_notes")
       };
 

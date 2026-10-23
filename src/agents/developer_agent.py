@@ -88,6 +88,17 @@ Para cada capability:
 
 PREBUILT CAPABILITY IMPLEMENTATIONS
 
+Si booking está ready=true, coloca un enlace visible a /reservar
+en la navegación o en la sección principal de la web.
+
+No sustituyas la acción de reservar o proponer una llegada por
+un formulario de presupuesto, un enlace mailto: ni WhatsApp.
+Si el negocio también necesita solicitar presupuestos, ofrece
+esa acción por separado.
+
+Comprueba antes de terminar que index.html contiene al menos
+un enlace visible a /reservar fuera del footer.
+
 Además de WEBSITE_SPEC, puedes recibir
 PREBUILT_CAPABILITY_IMPLEMENTATIONS.
 
@@ -170,6 +181,29 @@ Debes mantener la separación entre:
 - comportamiento funcional proporcionado por las capabilities;
 - integración visual y estructural realizada por ti.
 
+ESTILO DEL FORMULARIO DE RESERVAS
+
+Si WEBSITE_SPEC incluye la capability booking con ready=true,
+crea también el archivo booking-theme.css mediante write_file.
+
+Este archivo debe definir únicamente estas variables CSS en :root:
+--booking-bg
+--booking-surface
+--booking-text
+--booking-input-bg
+--booking-border
+--booking-accent
+--booking-accent-text
+--booking-slot-bg
+--booking-font
+
+Elige sus valores para que el formulario /reservar tenga los mismos
+colores y tipografía que la web que estás generando. Mantén buen
+contraste entre texto y fondo, especialmente en botones y campos.
+
+No copies styles.css ni añadas reglas para elementos o clases:
+booking-theme.css debe contener solo el bloque :root con las variables.
+Si booking no está listo o no está incluido, no crees este archivo.
 
 RESULTADO
 

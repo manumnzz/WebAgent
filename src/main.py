@@ -17,12 +17,6 @@ from capabilities.capability_input_resolver import (
 from capabilities.models.review import (
     ReviewData,
 )
-from capabilities.booking.configuration_builder import (
-    build_booking_configuration_draft,
-)
-from capabilities.booking.configuration_collector import (
-    apply_booking_information,
-)
 from capabilities.booking.configuration_finalizer import (
     finalize_booking_configuration,
 )
@@ -30,9 +24,6 @@ from capabilities.booking.config_writer import (
     save_booking_configuration,
 )
 from capabilities.models.booking import (
-    BookingCollectedInformation,
-    BookingDaySchedule,
-    BookingTimeRange,
     BookingBusinessInfo,
 )
 from tools.filesystem_tools import WEBSITE_ROOT
@@ -51,6 +42,13 @@ from agents.copy_agent import COPY_AGENT
 from agents.design_agent import DESIGN_AGENT
 from agents.developer_agent import DEVELOPER_AGENT
 from validation.validator import validate_website
+
+from intake.booking_adapter import (
+    build_booking_draft_from_input,
+)
+from capabilities.booking.configuration_readiness import (
+    get_booking_missing_information,
+)
 
 state = ProjectState()
 
@@ -103,104 +101,64 @@ state.business = apply_explicit_business_data(
 print("\nResultado final:")
 print(state.business)
 
-state.booking_configuration_draft = (
-    build_booking_configuration_draft(
-        state.business.services
-    )
-)
-
-booking_information = BookingCollectedInformation(
-    service_durations={
-        service.id: 60
-        for service
-        in state.booking_configuration_draft.services
-    },
-    timezone="Europe/Madrid",
-    weekly_schedule=[
-        BookingDaySchedule(
-            weekday="monday",
-            ranges=[
-                BookingTimeRange(
-                    start="09:00",
-                    end="14:00",
-                )
-            ],
-        ),
-        BookingDaySchedule(
-            weekday="tuesday",
-            ranges=[
-                BookingTimeRange(
-                    start="09:00",
-                    end="14:00",
-                )
-            ],
-        ),
-        BookingDaySchedule(
-            weekday="wednesday",
-            ranges=[
-                BookingTimeRange(
-                    start="09:00",
-                    end="14:00",
-                )
-            ],
-        ),
-        BookingDaySchedule(
-            weekday="thursday",
-            ranges=[
-                BookingTimeRange(
-                    start="09:00",
-                    end="14:00",
-                )
-            ],
-        ),
-        BookingDaySchedule(
-            weekday="friday",
-            ranges=[
-                BookingTimeRange(
-                    start="09:00",
-                    end="14:00",
-                )
-            ],
-        ),
-    ],
-    slot_interval_minutes=30,
-)
+# ============================================================
+# BOOKING: CONFIGURACIÓN APORTADA POR EL CLIENTE
+# ============================================================
 
 state.booking_configuration_draft = (
-    apply_booking_information(
-        state.booking_configuration_draft,
-        booking_information,
+    build_booking_draft_from_input(
+        project_input=state.project_input,
     )
 )
 
-booking_configuration = (
-    finalize_booking_configuration(
-        state.booking_configuration_draft
+draft = state.booking_configuration_draft
+
+if draft is None:
+    print("\nNo hay opciones de cita configuradas.")
+
+else:
+    missing = get_booking_missing_information(
+        draft
     )
-)
 
-booking_configuration.business = BookingBusinessInfo(
-    name=state.business.name,
-    phone=state.business.contact.phone,
-    whatsapp=state.business.contact.whatsapp,
-    email=state.business.contact.email,
-    address=state.business.contact.address,
-)
+    if not missing.is_complete:
+        print("\n=== BOOKING: INFORMACIÓN PENDIENTE ===")
+        print(
+            missing.model_dump_json(
+                indent=2
+            )
+        )
 
-state.capability_inputs.booking_configuration = (
-    booking_configuration
-)
+    else:
+        booking_configuration = (
+            finalize_booking_configuration(
+                draft
+            )
+        )
 
-save_booking_configuration(
-    booking_configuration
-)
+        booking_configuration.business = BookingBusinessInfo(
+            name=state.business.name,
+            phone=state.business.contact.phone,
+            whatsapp=state.business.contact.whatsapp,
+            email=state.business.contact.email,
+            address=state.business.contact.address,
+        )
 
-print("\n=== BOOKING CONFIGURATION ===")
-print(
-    booking_configuration.model_dump_json(
-        indent=2
-    )
-)
+        state.capability_inputs.booking_configuration = (
+            booking_configuration
+        )
+
+        save_booking_configuration(
+            booking_configuration,
+            path=project_root / "config" / "booking.json",
+        )
+
+        print("\n=== BOOKING CONFIGURATION ===")
+        print(
+            booking_configuration.model_dump_json(
+                indent=2
+            )
+        )
 
 state.capability_inputs = (
     resolve_business_capability_inputs(

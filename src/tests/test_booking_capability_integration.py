@@ -140,3 +140,46 @@ def test_booking_full_capability_pipeline():
     assert "PREBUILT_CAPABILITY_IMPLEMENTATIONS" in developer_context
     assert '"type": "booking"' in developer_context
     assert 'href=\\"/reservar\\"' in developer_context
+
+
+def test_pending_only_booking_is_included_even_if_ux_omits_it():
+    state = MagicMock()
+    state.business = BusinessProfile(
+        name="Taller", business_type="taller", location=None,
+        services=["Entrega del vehículo"], main_goal=None,
+        desired_style=[], requested_features=["booking"],
+    )
+    state.ux.sections = []
+    state.ux.navigation = []
+    state.ux.primary_cta = "Proponer entrega"
+    state.ux.missing_content = []
+    state.website_copy.sections = []
+    state.design.section_designs = []
+    state.design.visual_direction = "simple"
+    state.design.color_palette = []
+    state.design.typography_direction = "sans"
+    state.design.missing_information = []
+    state.design.missing_assets = []
+    state.capability_plan = CapabilityPlan(capabilities=[])
+    state.capability_inputs = CapabilityInputs(
+        booking_configuration=BookingConfiguration.model_validate({
+            "timezone": "Europe/Madrid",
+            "services": [],
+            "pending_arrival_types": [
+                {"id": "car-dropoff", "name": "Entrega del vehículo"}
+            ],
+            "weekly_schedule": [
+                {"weekday": "monday", "ranges": [
+                    {"start": "09:00", "end": "14:00"}
+                ]}
+            ],
+        })
+    )
+
+    spec = build_website_spec(state)
+
+    assert [capability.type for capability in spec.capabilities] == ["booking"]
+    assert spec.capabilities[0].ready is True
+    assert 'href="/reservar"' in (
+        resolve_ready_capability_implementations(spec)[0].html
+    )

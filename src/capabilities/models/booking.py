@@ -1,7 +1,7 @@
 from datetime import date, time, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 Weekday = Literal[
     "monday",
@@ -26,12 +26,22 @@ class BookingServiceDraft(BaseModel):
         gt=0,
     )
 
+class PendingArrivalType(BaseModel):
+    id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+
+class InquiryType(BaseModel):
+    id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+
 class BookingConfigurationDraft(BaseModel):
     timezone: str | None = None
 
     services: list[BookingServiceDraft] = Field(
         default_factory=list
     )
+    pending_arrival_types: list[PendingArrivalType] = Field(default_factory=list)
+    inquiry_types: list[InquiryType] = Field(default_factory=list)
 
     weekly_schedule: list[BookingDaySchedule] | None = None
 
@@ -62,6 +72,16 @@ class BookingCollectedInformation(BaseModel):
     service_durations: dict [str, int] = Field(
         default_factory=dict
     )
+    appointment_modes: dict[str, Literal["pending_arrival", "inquiry"]] = Field(
+        default_factory=dict
+    )
+
+    @field_validator("service_durations")
+    @classmethod
+    def validate_durations(cls, durations: dict[str, int]) -> dict[str, int]:
+        if any(minutes <= 0 for minutes in durations.values()):
+            raise ValueError("Las duraciones deben ser mayores que cero.")
+        return durations
 
     timezone: str | None = None
 
@@ -99,8 +119,10 @@ class BookingDaySchedule(BaseModel):
 class BookingConfiguration(BaseModel):
     timezone: str = Field(min_length=1)
 
-    services: list[BookingService]
-    weekly_schedule: list[BookingDaySchedule]
+    services: list[BookingService] = Field(default_factory=list)
+    pending_arrival_types: list[PendingArrivalType] = Field(default_factory=list)
+    inquiry_types: list[InquiryType] = Field(default_factory=list)
+    weekly_schedule: list[BookingDaySchedule] = Field(default_factory=list)
     
     business: BookingBusinessInfo | None = None
 
@@ -130,6 +152,35 @@ class BookingRequest(BaseModel):
                 "La reserva necesita almenos un email o un teléfono de contacto."
             )
 
+        return self
+
+
+class PendingArrivalRequest(BookingRequest):
+    notes: str = Field(min_length=1)
+
+    @field_validator("notes")
+    @classmethod
+    def validate_reason(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Indica el motivo de la visita.")
+        return value.strip()
+
+
+class InquiryRequest(BaseModel):
+    first_name: str = Field(min_length=1)
+    last_name: str = Field(min_length=1)
+    email: str | None = None
+    phone: str | None = None
+    service_id: str = Field(min_length=1)
+    notes: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_inquiry(self):
+        if not self.email and not self.phone:
+            raise ValueError("Indica un email o teléfono de contacto.")
+        if not self.notes.strip():
+            raise ValueError("Indica el motivo de la consulta.")
+        self.notes = self.notes.strip()
         return self
 
 class CalendarBusyInterval(BaseModel):
