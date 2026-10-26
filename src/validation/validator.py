@@ -7,17 +7,26 @@ from validation.checks.css_checks import validate_css
 from validation.checks.javascript_checks import validate_javascript
 from validation.checks.booking_links import validate_booking_inquiry_links
 from capabilities.models.booking import BookingConfiguration
+from pathlib import Path
+
+
 
 def validate_website(
     booking_configuration: BookingConfiguration | None = None,
+    *,
+    website_root: Path = WEBSITE_ROOT,
 ) -> ValidationResult:
 
     errors: list[ValidationIssue] = []
 
-    errors.extend(validate_filesystem())
+    errors.extend(
+        validate_filesystem(
+            website_root=website_root,
+        )
+    )
 
     #index.html
-    index_path = WEBSITE_ROOT / "index.html"
+    index_path = website_root / "index.html"
 
     if index_path.is_file():
 
@@ -31,7 +40,7 @@ def validate_website(
                 ))
 
     #styles.css
-    styles_path = WEBSITE_ROOT / "styles.css"
+    styles_path = website_root / "styles.css"
 
     if styles_path.is_file():
 
@@ -41,7 +50,7 @@ def validate_website(
             errors.extend(validate_css(content))
 
     #script.js
-    script_path = WEBSITE_ROOT / "script.js"
+    script_path = website_root / "script.js"
 
     if script_path.is_file():
 

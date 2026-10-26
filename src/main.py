@@ -26,7 +26,7 @@ from capabilities.booking.config_writer import (
 from capabilities.models.booking import (
     BookingBusinessInfo,
 )
-from tools.filesystem_tools import WEBSITE_ROOT
+from projects.workspace import build_project_workspace
 from state.project_state import ProjectState
 from context.context_builders import (
     build_ux_context,
@@ -69,11 +69,43 @@ parser.add_argument(
     help="Ruta al archivo JSON del encargo.",
 )
 
+parser.add_argument(
+    "--project-id",
+    required=True,
+    help="Identificador del proyecto donde se guardará la web.",
+)
+
 args = parser.parse_args()
 
+try:
+    workspace = build_project_workspace(
+        args.project_id,
+    )
+except ValueError as error:
+    parser.error(str(error))
+
 state.project_input = load_project_input(
-    args.input
+    args.input,
 )
+
+website_has_files = (
+    workspace.website_directory.exists()
+    and any(workspace.website_directory.iterdir())
+)
+
+if (
+    website_has_files
+    or workspace.booking_configuration_path.exists()
+):
+    parser.error(
+        "Este proyecto ya contiene una web o configuración. "
+        "Usa un identificador nuevo para esta generación."
+    )
+
+workspace.create_directories()
+
+print("\nProyecto:", workspace.project_id)
+print("Carpeta de la web:", workspace.website_directory)
 
 print(
     "\nEncargo cargado:",
@@ -150,9 +182,8 @@ else:
 
         save_booking_configuration(
             booking_configuration,
-            path=project_root / "config" / "booking.json",
+            path=workspace.booking_configuration_path,
         )
-
         print("\n=== BOOKING CONFIGURATION ===")
         print(
             booking_configuration.model_dump_json(
@@ -236,7 +267,8 @@ developer_context = build_developer_context(state)
 
 state.development = run_agent(
     agent=DEVELOPER_AGENT,
-    user_input=developer_context
+    user_input=developer_context,
+    workspace=workspace,
 )
 
 print("\n=== DEVELOPMENT RESULT ===")
@@ -248,6 +280,7 @@ print(state.development)
 
 state.validation = validate_website(
     state.capability_inputs.booking_configuration,
+    website_root=workspace.website_directory,
 )
 
 print("\n--- VALIDATION ---")
@@ -274,7 +307,8 @@ while (
 
     state.development = run_agent(
         agent=DEVELOPER_AGENT,
-        user_input=repair_context
+        user_input=repair_context,
+        workspace=workspace,
     )
 
     print("\n=== DEVELOPMENT RESULT ===")
@@ -284,6 +318,7 @@ while (
 
     state.validation = validate_website(
         state.capability_inputs.booking_configuration,
+        website_root=workspace.website_directory,
     )
 
     print(

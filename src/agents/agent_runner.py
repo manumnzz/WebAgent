@@ -8,6 +8,8 @@ from tools.tool_registry import (
     execute_tool
 )
 
+from projects.workspace import ProjectWorkspace
+
 
 client = OpenAI()
 
@@ -15,7 +17,9 @@ client = OpenAI()
 def run_agent(
     agent: AgentConfig,
     user_input: str,
-    max_steps: int = 10
+    max_steps: int = 10,
+    *,
+    workspace: ProjectWorkspace | None = None,
 ):
 
     input_messages = [
@@ -64,7 +68,8 @@ def run_agent(
             result = execute_tool(
                 tool_name=item.name,
                 arguments=arguments,
-                allowed_tools=agent.allowed_tools
+                allowed_tools=agent.allowed_tools,
+                workspace=workspace,
             )
 
             print(f"Tool solicitada: {item.name}")

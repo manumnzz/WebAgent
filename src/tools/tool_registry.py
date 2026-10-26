@@ -1,14 +1,17 @@
 from tools.business_tools import (
     search_business,
-    search_business_preferences
+    search_business_preferences,
 )
 
 from tools.filesystem_tools import (
     read_file,
     write_file,
     READ_FILE_DEFINITION,
-    WRITE_FILE_DEFINITION
+    WRITE_FILE_DEFINITION,
+    WEBSITE_ROOT,
 )
+
+from projects.workspace import ProjectWorkspace
 
 
 # ============================================================
@@ -219,29 +222,40 @@ def get_tool_definitions(tool_names: list[str]):
 def execute_tool(
     tool_name: str,
     arguments: dict,
-    allowed_tools: list[str]
+    allowed_tools: list[str],
+    *,
+    workspace: ProjectWorkspace | None = None,
 ):
     if tool_name not in allowed_tools:
         return {
             "success": False,
-            "error":
+            "error": (
                 f"Tool '{tool_name}' no permitida para este agente."
+            ),
         }
-
 
     tool = TOOL_REGISTRY.get(tool_name)
 
     if tool is None:
         return {
             "success": False,
-            "error": f"Tool '{tool_name}' no encontrada."
+            "error": f"Tool '{tool_name}' no encontrada.",
         }
 
+    execution_arguments = dict(arguments)
+
+    if tool_name in {"read_file", "write_file"}:
+        execution_arguments["website_root"] = (
+            workspace.website_directory
+            if workspace is not None
+            else WEBSITE_ROOT
+        )
+
     try:
-        return tool(**arguments)
+        return tool(**execution_arguments)
 
     except Exception as error:
         return {
             "success": False,
-            "error": str(error)
+            "error": str(error),
         }

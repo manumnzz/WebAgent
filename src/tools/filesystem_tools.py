@@ -54,57 +54,66 @@ READ_FILE_DEFINITION = {
     }
 }
 
-def write_file(path: str, content: str):
+def write_file(
+    path: str,
+    content: str,
+    *,
+    website_root: Path = WEBSITE_ROOT,
+):
+    root = website_root.resolve()
+    target_path = (root / path).resolve()
 
-    target_path = (WEBSITE_ROOT / path).resolve()
-
-    if not target_path.is_relative_to(WEBSITE_ROOT.resolve()):
+    if not target_path.is_relative_to(root):
         return {
             "success": False,
-            "error": "Ruta no permitida."
+            "error": "Ruta no permitida.",
         }
 
     target_path.parent.mkdir(
         parents=True,
-        exist_ok=True
+        exist_ok=True,
     )
 
     target_path.write_text(
         content,
-        encoding="utf-8"
-    )
-
-    return {
-        "success": True,
-        "path": path
-    }
-
-def read_file(path: str):
-
-    target_path = (WEBSITE_ROOT / path).resolve()
-
-    if not target_path.is_relative_to(WEBSITE_ROOT.resolve()):
-        return {
-            "success": False,
-            "error": "Ruta no permitida."
-        }
-
-    if not target_path.is_file():
-        return {
-            "success": False,
-            "error": f"Archivo no encontrado: {path}"
-        }
-
-    content = target_path.read_text(
-        encoding="utf-8"
+        encoding="utf-8",
     )
 
     return {
         "success": True,
         "path": path,
-        "content": content
     }
 
+
+def read_file(
+    path: str,
+    *,
+    website_root: Path = WEBSITE_ROOT,
+):
+    root = website_root.resolve()
+    target_path = (root / path).resolve()
+
+    if not target_path.is_relative_to(root):
+        return {
+            "success": False,
+            "error": "Ruta no permitida.",
+        }
+
+    if not target_path.is_file():
+        return {
+            "success": False,
+            "error": f"Archivo no encontrado: {path}",
+        }
+
+    content = target_path.read_text(
+        encoding="utf-8",
+    )
+
+    return {
+        "success": True,
+        "path": path,
+        "content": content,
+    }
 
 
     
