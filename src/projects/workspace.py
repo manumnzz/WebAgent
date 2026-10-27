@@ -30,6 +30,10 @@ class ProjectWorkspace:
             exist_ok=True,
         )
 
+    @property
+    def website_spec_path(self) -> Path:
+        return self.root / "config" / "website_spec.json"
+
 def build_project_workspace(
         project_id: str,
         *,

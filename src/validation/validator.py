@@ -16,6 +16,9 @@ from specs.website_spec import WebsiteCapabilitySpec
 from validation.checks.capability_placement import (
     validate_capability_placement,
 )
+from validation.checks.public_content import (
+    validate_public_content,
+)
 
 
 
@@ -43,6 +46,9 @@ def validate_website(
         if content.strip():
             errors.extend(
                 validate_html(content)
+            )
+            errors.extend(
+                validate_public_content(content)
             )
 
             errors.extend(

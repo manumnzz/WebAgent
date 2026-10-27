@@ -60,6 +60,21 @@ def placement_state(monkeypatch):
                 "section_designs": [],
                 "missing_assets": [],
                 "missing_information": [],
+                "design_system": {
+                    "colors": {
+                        "accent": "#D97706",
+                    },
+                    "typography": {
+                        "heading_family": "Barlow Condensed",
+                        "body_family": "Manrope",
+                    },
+                    "layout": {
+                        "content_max_width_px": 1320,
+                    },
+                    "motion": {
+                        "duration_ms": 560,
+                    },
+                },
             },
             "capability_plan": {
                 "capabilities": [

@@ -1,0 +1,2 @@
+# Optional browser tooling for make capturas / make mejorar / --visual-review.
+playwright==1.64.1

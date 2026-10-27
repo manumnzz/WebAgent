@@ -828,3 +828,7 @@ El objetivo no es acumular agentes, prompts o frameworks, sino crear un sistema 
 - un comportamiento observable y testeable.
 
 La prioridad es entender la arquitectura y poder justificar cada decisión técnica antes de abstraerla.
+
+## Calidad visual
+
+Dirección de arte estructurada, revisión con capturas y mejoras sobre copias: consulta [docs/visual-quality.md](docs/visual-quality.md). Nuevos comandos: `make capturas` y `make mejorar`. `make generar` incorpora revisión visual tras instalar `requirements-visual.txt` y Chromium.

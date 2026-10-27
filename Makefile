@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := ayuda
 
-.PHONY: ayuda formulario generar web test
+.PHONY: ayuda formulario generar web reparar capturas mejorar test
 
-ayuda formulario generar web test: ; @.venv/bin/python scripts/dev.py $@
+ayuda formulario generar web reparar capturas mejorar test: ; @.venv/bin/python scripts/dev.py $@

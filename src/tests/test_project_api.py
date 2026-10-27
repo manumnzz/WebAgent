@@ -49,6 +49,10 @@ def test_two_apps_serve_independent_projects(
     ]:
         workspace = build_test_workspace(project_id)
         workspace.create_directories()
+        workspace.website_spec_path.write_text(
+            '{"internal": "not-public"}',
+            encoding="utf-8",
+        )
 
         (workspace.website_directory / "index.html").write_text(
             content,
@@ -85,6 +89,14 @@ def test_two_apps_serve_independent_projects(
             "project_id": "taller",
             "booking_enabled": False,
         }
+        for client in (fisio, taller):
+            assert client.get(
+                "/config/website_spec.json"
+            ).status_code == 404
+
+            assert client.get(
+                "/website_spec.json"
+            ).status_code == 404
 
 def test_two_apps_load_independent_booking_configurations(
     tmp_path,

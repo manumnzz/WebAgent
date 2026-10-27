@@ -51,6 +51,11 @@ from capabilities.booking.configuration_readiness import (
 )
 from media.publishing import publish_submission_media
 
+from specs.storage import save_website_spec
+
+
+
+
 state = ProjectState()
 
 state.capability_inputs.gallery_assets = []
@@ -76,7 +81,14 @@ parser.add_argument(
     help="Identificador del proyecto donde se guardará la web.",
 )
 
+parser.add_argument('--visual-review', action='store_true',
+    help='Evaluar capturas y corregir el diseño (consume llamadas adicionales).')
+parser.add_argument('--visual-attempts', type=int, choices=range(0,4), default=2)
 args = parser.parse_args()
+if args.visual_review:
+    from visual.capture import check_browser
+    check_browser()
+
 
 try:
     workspace = build_project_workspace(
@@ -97,6 +109,7 @@ website_has_files = (
 if (
     website_has_files
     or workspace.booking_configuration_path.exists()
+    or workspace.website_spec_path.exists()
 ):
     parser.error(
         "Este proyecto ya contiene una web o configuración. "
@@ -252,7 +265,9 @@ design_input = build_design_context(state)
 
 state.design = run_agent(
     agent=DESIGN_AGENT,
-    user_input=design_input
+    user_input=design_input,
+    image_paths=[workspace.website_directory / asset.path
+                 for asset in state.available_media[:4]],
 )
 
 print("\nDesign Spec:")
@@ -265,6 +280,11 @@ print(state.design)
 
 
 state.website_spec = build_website_spec(state)
+
+save_website_spec(
+    state.website_spec,
+    path=workspace.website_spec_path,
+)
 
 print("\nWEBSITE SPEC:")
 print(
@@ -281,6 +301,8 @@ state.development = run_agent(
     agent=DEVELOPER_AGENT,
     user_input=developer_context,
     workspace=workspace,
+    image_paths=[workspace.website_directory / asset.path
+                 for asset in state.available_media[:4]],
 )
 
 print("\n=== DEVELOPMENT RESULT ===")
@@ -366,3 +388,12 @@ else:
             f"- [{error.code}] "
             f"{error.file}: {error.message}"
         )
+
+
+if state.validation.is_valid and args.visual_review:
+    from visual.pipeline import improve_visual
+    visual_report = improve_visual(workspace, max_attempts=args.visual_attempts)
+    print("\n=== VISUAL QUALITY ===")
+    print(visual_report.model_dump_json(indent=2))
+    if visual_report.status != 'passed':
+        raise SystemExit(1)
