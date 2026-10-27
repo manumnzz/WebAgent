@@ -49,6 +49,7 @@ from intake.booking_adapter import (
 from capabilities.booking.configuration_readiness import (
     get_booking_missing_information,
 )
+from media.publishing import publish_submission_media
 
 state = ProjectState()
 
@@ -103,6 +104,17 @@ if (
     )
 
 workspace.create_directories()
+
+state.available_media = publish_submission_media(
+    submission_directory=args.input.resolve().parent,
+    workspace=workspace,
+)
+
+state.capability_inputs.gallery_assets = [
+    asset.path
+    for asset in state.available_media
+    if asset.role == "gallery"
+]
 
 print("\nProyecto:", workspace.project_id)
 print("Carpeta de la web:", workspace.website_directory)

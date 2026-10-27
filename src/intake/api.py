@@ -13,6 +13,8 @@ from capabilities.booking.configuration_builder import (
 )
 from capabilities.models.booking import BookingServiceDraft
 
+from media.api import create_media_router
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -95,6 +97,10 @@ def create_intake_app(
                 status_code=422,
                 detail=str(error),
             ) from error
+
+    app.include_router(
+        create_media_router(storage_path)
+    )
 
     return app
 

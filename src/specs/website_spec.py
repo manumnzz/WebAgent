@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Any
 
 from agents.business_agent import BusinessProfile
 from specs.capability_spec import CapabilityType
+from media.models import WebsiteMediaAsset
 
 class WebsiteSectionSpec(BaseModel):
     name: str
@@ -35,6 +36,10 @@ class WebsiteCapabilitySpec(BaseModel):
 
 class WebsiteSpec(BaseModel):
     business: BusinessProfile
+
+    available_media: list[WebsiteMediaAsset] = Field(
+        default_factory=list,
+    )
 
     navigation: list[str]
     primary_cta: str | None

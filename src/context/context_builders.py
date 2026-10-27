@@ -50,7 +50,11 @@ def build_design_context(state: ProjectState) -> str:
 
     context = {
         "business": state.business.model_dump(),
-        "ux": state.ux.model_dump()
+        "ux": state.ux.model_dump(),
+        "available_media": [
+            asset.model_dump(mode="json")
+            for asset in state.available_media
+        ],
     }
 
     return json.dumps(context)

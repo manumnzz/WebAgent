@@ -35,6 +35,14 @@ Debes cumplir estas reglas:
 - No cambies los servicios ni la información factual del negocio.
 - No escribas el copy de la página.
 - No escribas HTML, CSS ni JavaScript.
+- Recibirás available_media con los recursos reales disponibles.
+- Utiliza sus roles, rutas y dimensiones para planificar el diseño.
+- No marques como ausente un logo o una fotografía que ya figure
+  entre los recursos disponibles.
+- Este contexto contiene metadatos, no una inspección visual
+  de las imágenes: no inventes su contenido.
+- Puedes indicar recursos adicionales que hagan falta,
+  diferenciándolos de los que ya están disponibles.
 """
 
 DESIGN_AGENT_TOOLS = []

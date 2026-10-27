@@ -103,6 +103,25 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
             reason="Gestionar reservas y solicitudes en Calendar.",
         ))
 
+    if (
+        "gallery" in state.business.requested_features
+        and state.capability_inputs.gallery_assets
+        and not any(
+            item.type == "gallery"
+            for item in planned_capabilities
+        )
+    ):
+        planned_capabilities.append(
+            CapabilitySpec(
+                type="gallery",
+                required=True,
+                reason=(
+                    "Mostrar las fotografías proporcionadas "
+                    "por el cliente."
+                ),
+            )
+        )
+
     for capability in planned_capabilities:
 
         definition = get_capability_definition(
@@ -141,6 +160,8 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
 
     return WebsiteSpec(
         business=state.business,
+
+        available_media=state.available_media,
 
         navigation=state.ux.navigation,
         primary_cta=state.ux.primary_cta,

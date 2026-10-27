@@ -266,6 +266,20 @@ Puedes recibir uno de estos modos:
 - Si una reparación afecta al código de una capability, conserva su
   comportamiento y modifica únicamente lo necesario para corregir
   el error indicado.
+
+RECURSOS MULTIMEDIA DISPONIBLES
+
+- WEBSITE_SPEC.available_media contiene imágenes reales ya copiadas
+  al workspace por Python.
+- Utiliza el campo path como ruta relativa en el HTML.
+- Si existe un recurso con role="logo", intégralo como logo del negocio.
+- Para la galería, utiliza la implementación preconstruida cuando
+  esté disponible.
+- No recrees, sobrescribas ni intentes leer estos archivos binarios
+  mediante las tools de texto.
+- Conserva sus rutas durante las reparaciones.
+- Utiliza alt_text cuando esté disponible. Si falta, no inventes
+  personas, lugares ni trabajos concretos que aparezcan en la imagen.
 """
 
 DEVELOPER_AGENT = AgentConfig(

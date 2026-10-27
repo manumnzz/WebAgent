@@ -291,7 +291,42 @@
         ¿Hay algo más que debamos saber?
         <textarea name="additional_notes"></textarea>
       </label>
+      <fieldset id="media-panel">
+        <legend>Logo y fotografías</legend>
 
+        <p>
+          Puedes proporcionar tu logo y fotografías reales del negocio
+          para utilizarlos en la web.
+        </p>
+
+        <label>
+          Logo
+          <input
+            id="logo-file"
+            name="logo"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+          >
+        </label>
+
+        <label>
+          Fotografías para la galería
+          <input
+            id="gallery-files"
+            name="gallery"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+          >
+        </label>
+
+        <small>
+          Formatos: JPEG, PNG y WebP. Máximo 10 MiB por archivo,
+          20 fotografías y 40 MiB entre todos los archivos.
+          Para mostrar las fotografías como galería, marca también
+          «Galería de fotografías».
+        </small>
+      </fieldset>
       <button type="submit">Enviar información</button>
       <p id="result" role="status" aria-live="polite"></p>
     </form>
@@ -714,82 +749,249 @@
         };
     }
 
-    form.addEventListener("submit", async event => {
-      event.preventDefault();
+    let savedSubmissionId = null;
+let mediaPending = false;
+let submissionCompleted = false;
 
-      const data = new FormData(form);
+const mediaPanel = document.getElementById("media-panel");
+const logoInput = document.getElementById("logo-file");
+const galleryInput = document.getElementById("gallery-files");
 
-      let booking;
 
-      try {
-        booking = collectBooking(data);
-      } catch (error) {
-        result.textContent = error.message;
+function describeApiError(body, fallback) {
+  if (typeof body.detail === "string") {
+    return body.detail;
+  }
+
+  if (Array.isArray(body.detail)) {
+    return body.detail.map(error => {
+      const field = (error.loc ?? []).slice(1).join(".");
+      return field
+        ? `${field}: ${error.msg}`
+        : error.msg;
+    }).join("\n");
+  }
+
+  return fallback;
+}
+
+
+function lockBusinessFields() {
+  form.querySelectorAll("fieldset").forEach(fieldset => {
+    if (fieldset.id !== "media-panel") {
+      fieldset.disabled = true;
+    }
+  });
+}
+
+
+form.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (submissionCompleted || submitButton.disabled) {
+    return;
+  }
+
+  const logo = logoInput.files[0] ?? null;
+  const gallery = Array.from(galleryInput.files);
+
+  const selectedFiles = [
+    ...(logo ? [logo] : []),
+    ...gallery
+  ];
+
+  // Comprobaciones rápidas para evitar envíos innecesarios.
+  if (gallery.length > 20) {
+    result.textContent = "Selecciona como máximo 20 fotografías.";
+    return;
+  }
+
+  if (selectedFiles.some(file => file.size > 10 * 1024 * 1024)) {
+    result.textContent = "Cada imagen debe ocupar como máximo 10 MiB.";
+    return;
+  }
+
+  const totalBytes = selectedFiles.reduce(
+    (total, file) => total + file.size,
+    0
+  );
+
+  if (totalBytes > 40 * 1024 * 1024) {
+    result.textContent =
+      "El conjunto de imágenes debe ocupar como máximo 40 MiB.";
+    return;
+  }
+
+  if (mediaPending && selectedFiles.length === 0) {
+    result.textContent =
+      "Tu encargo ya está guardado. " +
+      "Selecciona las imágenes para reintentar su envío. " +
+      "Referencia: " + savedSubmissionId;
+    return;
+  }
+
+  // Preparar el JSON únicamente si aún no hemos guardado el encargo.
+  let payload = null;
+
+  if (savedSubmissionId === null) {
+    const data = new FormData(form);
+
+    let booking;
+
+    try {
+      booking = collectBooking(data);
+    } catch (error) {
+      result.textContent = error.message;
+      return;
+    }
+
+    payload = {
+      business_name: String(
+        data.get("business_name") ?? ""
+      ).trim(),
+
+      business_description: String(
+        data.get("business_description") ?? ""
+      ).trim(),
+
+      business_type: optionalText(data, "business_type"),
+      location: optionalText(data, "location"),
+      services: lines(data, "services"),
+
+      contact: {
+        phone: optionalText(data, "phone"),
+        whatsapp: optionalText(data, "whatsapp"),
+        email: optionalText(data, "email"),
+        address: optionalText(data, "address")
+      },
+
+      main_goal: optionalText(data, "main_goal"),
+
+      desired_style: optionalText(data, "desired_style")
+        ? [optionalText(data, "desired_style")]
+        : [],
+
+      reference_websites: lines(data, "reference_websites"),
+      requested_features: data.getAll("features"),
+
+      booking,
+
+      appointment_types: bookingCheckbox.checked
+        ? lines(data, "appointment_types")
+        : [],
+
+      additional_notes: optionalText(data, "additional_notes")
+    };
+  }
+
+  submitButton.disabled = true;
+  mediaPanel.disabled = true;
+
+  try {
+    if (savedSubmissionId === null) {
+      result.textContent = "Guardando la información del negocio…";
+
+      const response = await fetch("/intake", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const body = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          describeApiError(
+            body,
+            "No se ha podido guardar la información."
+          )
+        );
+      }
+
+      savedSubmissionId = body.submission_id;
+      mediaPending = selectedFiles.length > 0;
+
+      lockBusinessFields();
+    }
+
+    if (selectedFiles.length > 0) {
+      result.textContent =
+        "Información guardada. Subiendo las imágenes…";
+
+      const mediaData = new FormData();
+
+      if (logo) {
+        mediaData.append("logo", logo);
+      }
+
+      for (const file of gallery) {
+        mediaData.append("gallery", file);
+      }
+
+      const response = await fetch(
+        `/intake/${savedSubmissionId}/media`,
+        {
+          method: "POST",
+          body: mediaData
+        }
+      );
+
+      const body = await response.json();
+
+      if (response.status === 409) {
+        submissionCompleted = true;
+        mediaPending = false;
+
+        result.textContent =
+          "El encargo ya tiene una entrega de imágenes registrada. " +
+          "Los archivos seleccionados ahora no la han sustituido. " +
+          "Referencia: " + savedSubmissionId;
+
         return;
       }
 
-      const payload = {
-        business_name: String(data.get("business_name") ?? "").trim(),
-        business_description: String(
-          data.get("business_description") ?? ""
-        ).trim(),
-        business_type: optionalText(data, "business_type"),
-        location: optionalText(data, "location"),
-        services: lines(data, "services"),
-        contact: {
-          phone: optionalText(data, "phone"),
-          whatsapp: optionalText(data, "whatsapp"),
-          email: optionalText(data, "email"),
-          address: optionalText(data, "address")
-        },
-        main_goal: optionalText(data, "main_goal"),
-        desired_style: optionalText(data, "desired_style")
-          ? [optionalText(data, "desired_style")]
-          : [],
-        reference_websites: lines(data, "reference_websites"),
-        requested_features: data.getAll("features"),
-        booking,
-        appointment_types: bookingCheckbox.checked
-          ? lines(data, "appointment_types")
-          : [],
-        additional_notes: optionalText(data, "additional_notes")
-      };
-
-      submitButton.disabled = true;
-      result.textContent = "Comprobando información…";
-
-      try {
-        const response = await fetch("/intake", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        const body = await response.json();
-
-        if (!response.ok) {
-          const errors = Array.isArray(body.detail)
-            ? body.detail.map(error => {
-                const field = error.loc.slice(1).join(".");
-                return `${field}: ${error.msg}`;
-              }).join("\n")
-            : "No se ha podido validar la información.";
-
-          result.textContent = errors;
-          return;
-        }
-
-        result.textContent =
-            "Hemos recibido tu información. " +
-            "Referencia del encargo: " + body.submission_id;
-      } catch (error) {
-        result.textContent =
-          "No se ha podido conectar con el servidor. " +
-          "Comprueba la conexión e inténtalo de nuevo.";
-      } finally {
-        submitButton.disabled = false;
+      if (!response.ok) {
+        throw new Error(
+          describeApiError(
+            body,
+            "No se han podido guardar las imágenes."
+          )
+        );
       }
-    });
+
+      mediaPending = false;
+    }
+
+    submissionCompleted = true;
+
+    result.textContent = selectedFiles.length > 0
+      ? "Hemos recibido tu información y tus imágenes. " +
+        "Referencia del encargo: " + savedSubmissionId
+      : "Hemos recibido tu información. " +
+        "Referencia del encargo: " + savedSubmissionId;
+
+  } catch (error) {
+    result.textContent = savedSubmissionId
+      ? "Tu información está guardada. " +
+        "No se ha podido completar el envío de imágenes: " +
+        error.message +
+        "\nPuedes corregir los archivos y reintentar sin cerrar esta página." +
+        "\nReferencia: " + savedSubmissionId
+      : "No se ha podido confirmar el envío: " + error.message;
+
+  } finally {
+    submitButton.disabled = submissionCompleted;
+    mediaPanel.disabled = submissionCompleted;
+
+    submitButton.textContent = submissionCompleted
+      ? "Enviado"
+      : savedSubmissionId
+        ? "Reintentar envío de imágenes"
+        : "Enviar información";
+  }
+});
   </script>
 </body>
 </html>

@@ -13,9 +13,13 @@ from capabilities.models.booking import (
     BookingConfigurationDraft,
 )
 from intake.models import ProjectInput
+from media.models import WebsiteMediaAsset
 
 class ProjectState(BaseModel):
     project_input: ProjectInput | None = None
+    available_media: list[WebsiteMediaAsset] = Field(
+        default_factory=list,
+    )
     
     business: BusinessProfile | None = None
     ux: WebsiteStructure | None = None
