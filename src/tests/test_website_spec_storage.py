@@ -28,14 +28,6 @@ def specification():
             "visual_direction": "Fotografía protagonista.",
             "color_palette": ["#D97706"],
             "typography_direction": "Títulos contundentes.",
-            "design_system": {
-                "colors": {
-                    "accent": "#D97706",
-                },
-                "layout": {
-                    "content_max_width_px": 1320,
-                },
-            },
             "sections": [],
             "capabilities": [],
             "missing_content": [],
@@ -56,8 +48,8 @@ def test_saves_and_restores_full_specification(
     restored = load_website_spec(path)
 
     assert restored == specification
-    assert restored.design_system.colors.accent == "#D97706"
-    assert restored.design_system.layout.content_max_width_px == 1320
+    assert restored.color_palette == ["#D97706"]
+    assert restored.visual_direction == "Fotografía protagonista."
 
     stored = json.loads(path.read_text(encoding="utf-8"))
     assert stored["schema_version"] == 1

@@ -1,17 +1,12 @@
+from capabilities.capability_registry import get_capability_definition
+from capabilities.capability_readiness import evaluate_capability_readiness
 from state.project_state import ProjectState
-
 import json
-
 from capabilities.capability_resolver import (
     resolve_ready_capability_implementations,
 )
 
-from agent_skills.context import build_skill_context
-from capabilities.capability_registry import get_capability_definition
-from capabilities.capability_readiness import evaluate_capability_readiness
-
-
-def design_capability_constraints(state: ProjectState) -> list[dict]:
+def build_capability_constraints(state: ProjectState) -> list[dict]:
     if state.website_spec is not None:
         return [{"type": c.type, "ready": c.ready,
                  "placement_policy": c.placement_policy.model_dump(),
@@ -55,7 +50,7 @@ def build_copy_context(state: ProjectState) -> str:
         "business": state.business.model_dump(),
         "ux": state.ux.model_dump(),
         "available_media": [asset.model_dump(mode="json") for asset in state.available_media],
-        "capability_constraints": design_capability_constraints(state),
+        "capability_constraints": build_capability_constraints(state),
     }
 
     return json.dumps(context)
@@ -77,16 +72,10 @@ def build_design_context(state: ProjectState) -> str:
     context = {
         "business": state.business.model_dump(),
         "ux": state.ux.model_dump(),
-        "capability_constraints": design_capability_constraints(state),
-        "website_copy": (
-            state.website_copy.model_dump()
-            if state.website_copy is not None else None
-        ),
         "available_media": [
             asset.model_dump(mode="json")
             for asset in state.available_media
         ],
-        "skills": build_skill_context(),
     }
 
     return json.dumps(context)
@@ -114,12 +103,6 @@ def build_developer_context(state: ProjectState) -> str:
         indent=2,
     )
 
-    skills_json = json.dumps(
-        build_skill_context(),
-        ensure_ascii=False,
-        indent=2,
-    )
-
     return f"""
         MODE: generate
 
@@ -128,9 +111,6 @@ def build_developer_context(state: ProjectState) -> str:
 
         PREBUILT_CAPABILITY_IMPLEMENTATIONS:
         {implementations_json}
-
-        SKILLS:
-        {skills_json}
     """
 
 def build_developer_repair_context(state: ProjectState) -> str:
@@ -163,12 +143,6 @@ def build_developer_repair_context(state: ProjectState) -> str:
         indent=2,
     )
 
-    skills_json = json.dumps(
-            build_skill_context(),
-            ensure_ascii=False,
-            indent=2,
-    )
-
     return f"""
         MODE: repair
         
@@ -177,9 +151,6 @@ def build_developer_repair_context(state: ProjectState) -> str:
 
         PREBUILT_CAPABILITY_IMPLEMENTATIONS:
         {implementations_json}
-
-        SKILLS:
-        {skills_json}
 
         VALIDATION_RESULT:
         {validation_json}

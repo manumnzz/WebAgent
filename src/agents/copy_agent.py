@@ -50,27 +50,6 @@ y deja vacíos los textos que no puedas redactar.
 """
 
 COPY_AGENT_INSTRUCTIONS += """
-Redacta para una interfaz real: títulos concretos y fáciles de escanear,
-párrafos breves, una idea por sección y CTA que nombre la acción.
-En el hero procura un titular de 5–12 palabras, un apoyo de 20–40 palabras
-y un CTA de 2–5 palabras cuando sea posible sin perder precisión.
-Evita repetir nombre del negocio, localidad y lista completa de servicios
-en cada bloque. No conviertas prioridades internas ("servicio prioritario")
-en etiquetas para clientes. No añadas una sección si solo repite otra.
-"""
-
-COPY_AGENT_INSTRUCTIONS += """
-Evita titulares intercambiables: "Tu aliado", "Tu taller de confianza",
-"Soluciones para ti", "Calidad y profesionalidad", "Llevamos X al siguiente nivel".
-Prefiere el nombre, la oferta o una idea específica respaldada por el encargo.
-En el hero, el nombre y la actividad deben ser comprensibles de un vistazo.
-Un CTA como "Pedir presupuesto" puede ser breve si el contexto contiguo explica
-que se trata de neumáticos. No repitas la descripción completa dentro del botón.
-No trates primary_cta como una cadena que deba copiarse literalmente: conserva
-su intención y haz que la etiqueta sea clara, breve y consistente.
-"""
-
-COPY_AGENT_INSTRUCTIONS += """
 capability_constraints indica qué funciones están listas. No escribas
 "rellena el formulario" si contact_form no está listo; una solicitud mediante
 Booking es una acción de presupuesto, no un formulario propio que debas prometer.

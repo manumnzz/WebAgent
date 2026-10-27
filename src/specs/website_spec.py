@@ -9,9 +9,6 @@ from capabilities.placement_policy import (
     CapabilityPlacementPolicy,
 )
 
-from specs.design_system import DesignSystem
-from specs.art_direction import ArtDirection, SectionComposition
-
 class WebsiteSectionSpec(BaseModel):
     name: str
     purpose: str
@@ -26,7 +23,6 @@ class WebsiteSectionSpec(BaseModel):
     layout: str
     visual_notes: str
     required_inputs: list[str]
-    composition: SectionComposition = Field(default_factory=SectionComposition)
 
 class WebsiteCapabilitySpec(BaseModel):
     type: CapabilityType
@@ -57,12 +53,8 @@ class WebsiteSpec(BaseModel):
     primary_cta: str | None
 
     visual_direction: str
-    art_direction: ArtDirection = Field(default_factory=ArtDirection)
     color_palette: list[str]
     typography_direction: str
-    design_system: DesignSystem = Field(
-        default_factory=DesignSystem,
-    )
 
     sections: list[WebsiteSectionSpec]
 

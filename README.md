@@ -829,6 +829,16 @@ El objetivo no es acumular agentes, prompts o frameworks, sino crear un sistema 
 
 La prioridad es entender la arquitectura y poder justificar cada decisión técnica antes de abstraerla.
 
-## Calidad visual
+## Comandos de desarrollo y reparación
 
-Dirección de arte estructurada, revisión con capturas y mejoras sobre copias: consulta [docs/visual-quality.md](docs/visual-quality.md). Nuevos comandos: `make capturas` y `make mejorar`. `make generar` incorpora revisión visual tras instalar `requirements-visual.txt` y Chromium.
+Desde la raíz del repositorio, `make` muestra los comandos disponibles:
+
+- `make formulario`: iniciar el formulario de encargos en el puerto 8001.
+- `make generar`: elegir un encargo y generar una web con los agentes originales, sin skills ni revisión visual automática.
+- `make web`: elegir una web y servirla en el puerto 8002.
+- `make reparar`: validar y reparar una copia de una generación con contrato guardado; no repite Business, UX, Copy ni Design. Si la validación ya pasa, no llama al modelo.
+- `make test`: ejecutar la suite de pruebas.
+
+Cada nueva generación conserva su contrato en `config/website_spec.json`, fuera del directorio público `website/`. La reparación conserva el proyecto original y guarda su informe en `config/repair_report.json` de la copia. Los contratos guardados durante el experimento visual siguen cargándose: los campos exclusivos de ese experimento se ignoran al recuperar el contrato clásico y no se vuelven a enviar al modelo. Los archivos de las webs ya generadas no se modifican al actualizar el código.
+
+La generación vuelve a usar el modelo declarado en cada `AgentConfig`. Se han retirado los perfiles automáticos de calidad, la inyección de skills y los comandos `capturas` y `mejorar`. Las variables `WEBAGENT_QUALITY_PROFILE` y los overrides de modelo del experimento ya no se consultan. Se conservan el aislamiento por proyecto, multimedia, Booking/OAuth, las reglas de placement y la detección de notas internas en el contenido público.

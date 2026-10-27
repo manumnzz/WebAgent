@@ -65,14 +65,6 @@ No decidas colores, tipografías ni estilo visual.
 No escribas HTML, CSS ni JavaScript.
 """
 
-UX_AGENT_INSTRUCTIONS += """
-La estructura debe estar proporcionada al contenido real: no rellenes con
-secciones repetidas o vacías. Cada sección debe responder una pregunta distinta
-del visitante y acercarlo al objetivo. Prioriza identidad/oferta/acción al inicio,
-servicios o evidencia útil después y contacto claro al final cuando corresponda.
-Una web breve bien resuelta es preferible a alargarla con contenido redundante.
-"""
-
 UX_AGENT_TOOLS = []
 
 UX_AGENT = AgentConfig(

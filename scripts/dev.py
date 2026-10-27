@@ -97,7 +97,6 @@ def generate():
     execute(
         [
             "src/main.py",
-            "--visual-review",
             "--input",
             str(selected),
             "--project-id",
@@ -202,21 +201,6 @@ def repair_website():
     )
 
 
-def visual_website(*, improve=False):
-    paths = [p for p in (PROJECT_ROOT/'output'/'projects').glob('*')
-             if (p/'website'/'index.html').is_file()
-             and (not improve or (p/'config'/'website_spec.json').is_file())]
-    paths.sort(key=lambda p: (p/'website'/'index.html').stat().st_mtime, reverse=True)
-    selected = choose(paths,title='Proyectos para revisión visual',label=lambda p:p.name)
-    arguments = ['src/visual_quality.py','--source-project-id',selected.name]
-    if improve:
-        suggested = f'{selected.name[:65]}-visual-{uuid4().hex[:8]}'
-        project_id = input(f'\nNombre de la copia [{suggested}]: ').strip() or suggested
-        arguments += ['--improve','--project-id',project_id]
-        print('\nSe evaluará y mejorará una copia. Consume llamadas al modelo.',flush=True)
-    execute(arguments)
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Comandos de desarrollo de WebAgent.",
@@ -231,8 +215,6 @@ def main():
             "web",
             "test",
             "reparar",
-            "capturas",
-            "mejorar",
         ],
         nargs="?",
         default="ayuda",
@@ -245,9 +227,6 @@ def main():
 
     elif command == "reparar":
         repair_website()
-
-    elif command in {"capturas", "mejorar"}:
-        visual_website(improve=command == "mejorar")
 
     elif command == "web":
         serve_website()
@@ -292,8 +271,6 @@ def main():
             "  make web         Elegir y servir una web\n"
             "  make test        Ejecutar los tests\n"
             "  make reparar     Reparar una copia de una web\n"
-            "  make capturas    Capturas y mediciones sin llamadas al modelo\n"
-            "  make mejorar     Mejorar visualmente una copia\n"
         )
 
 

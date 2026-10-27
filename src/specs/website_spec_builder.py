@@ -39,10 +39,6 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
             "No se puede construir WebsiteSpec: falta state.design."
         )
 
-    media_paths = {asset.path for asset in state.available_media}
-    if any(item.path not in media_paths for item in state.design.art_direction.asset_decisions):
-        raise ValueError("La dirección de arte referencia un recurso que no está disponible.")
-
     copy_by_section = {
         section.section_name: section
         for section in state.website_copy.sections
@@ -89,8 +85,7 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
             # DESIGN
             layout=design_section.layout,
             visual_notes=design_section.visual_notes,
-            required_inputs=design_section.required_inputs,
-            composition=design_section.composition.model_copy(deep=True),
+            required_inputs=design_section.required_inputs
         )
 
         sections.append(section_spec)
@@ -176,18 +171,8 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
         primary_cta=state.ux.primary_cta,
 
         visual_direction=state.design.visual_direction,
-        art_direction=state.design.art_direction.model_copy(deep=True),
-        color_palette=list(
-            dict.fromkeys(
-                state.design.design_system.colors
-                .model_dump()
-                .values()
-            )
-        ),
+        color_palette=state.design.color_palette,
         typography_direction=state.design.typography_direction,
-        design_system=state.design.design_system.model_copy(
-            deep=True,
-        ),
 
         sections=sections,
 

@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock
-from specs.art_direction import ArtDirection
 
 from capabilities.capability_inputs import (
     CapabilityInputs,
@@ -21,7 +20,7 @@ from agents.business_agent import BusinessProfile
 from context.context_builders import (
     build_developer_context,
 )
-from specs.design_system import DesignSystem
+
 
 def build_booking_configuration():
     return BookingConfiguration.model_validate(
@@ -87,8 +86,6 @@ def test_booking_full_capability_pipeline():
     state.design.typography_direction = "modern"
     state.design.missing_information = []
     state.design.missing_assets = []
-    state.design.design_system = DesignSystem()
-    state.design.art_direction = ArtDirection()
 
     # CAPABILITY PLAN
     state.capability_plan = CapabilityPlan(
@@ -163,8 +160,6 @@ def test_pending_only_booking_is_included_even_if_ux_omits_it():
     state.design.typography_direction = "sans"
     state.design.missing_information = []
     state.design.missing_assets = []
-    state.design.design_system = DesignSystem()
-    state.design.art_direction = ArtDirection()
     state.capability_plan = CapabilityPlan(capabilities=[])
     state.capability_inputs = CapabilityInputs(
         booking_configuration=BookingConfiguration.model_validate({
