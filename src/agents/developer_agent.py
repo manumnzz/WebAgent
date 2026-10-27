@@ -267,6 +267,91 @@ Puedes recibir uno de estos modos:
   comportamiento y modifica únicamente lo necesario para corregir
   el error indicado.
 
+LÍMITES DE APARICIÓN DE CAPABILITIES
+
+Cada capability de WEBSITE_SPEC incluye placement_policy.
+
+- placement_policy.max_instances indica el máximo de instancias
+  de esa capability que puedes integrar en index.html.
+
+- Es un máximo, no una cantidad que debas alcanzar.
+
+- Respeta este límite tanto en generación como en reparación.
+
+- Para WhatsApp, cada enlace que inicia una conversación cuenta
+  como una instancia, incluidos los botones flotantes.
+
+- Para Maps, cada integración que muestra o abre la ubicación
+  cuenta como una instancia.
+
+- Para contact_form, cada formulario de contacto cuenta
+  como una instancia.
+
+- Para gallery y reviews, cuenta los bloques completos.
+  No cuentes individualmente sus imágenes u opiniones.
+
+- Los enlaces internos de navegación hacia un bloque existente,
+  como href="#galeria", no crean otra instancia de ese bloque.
+
+- Para booking, aplica max_instances por separado al acceso
+  general a /reservar y a cada opción con service_id.
+  Por ejemplo, con max_instances=1 puedes incluir un acceso
+  general y un enlace por cada opción concreta.
+
+- Los enlaces específicos de Booking también deben respetar
+  allowed_zones.
+
+- Cada enlace específico debe contener un único service_id
+  no vacío. Conserva los identificadores proporcionados
+  por la implementación preconstruida.
+
+- No dupliques bloques completos para ofrecer otro acceso
+  a una funcionalidad que ya está integrada.
+
+- No dupliques CSS ni JavaScript al repetir un acceso permitido
+  a una misma capability.
+
+ZONAS DE INTEGRACIÓN DE CAPABILITIES
+
+- placement_policy.allowed_zones contiene las zonas permitidas
+  para integrar cada capability.
+
+- Si allowed_zones es null, no hay una restricción de zonas
+  definida para esa capability.
+
+- Las zonas permitidas son alternativas. No debes colocar
+  una instancia en cada una de ellas.
+
+- Conserva siempre el límite total de max_instances.
+
+- Identifica las zonas del HTML mediante el atributo
+  data-capability-zone en sus contenedores correspondientes.
+
+- Los valores admitidos son:
+  hero, content, contact, floating, navigation y footer.
+
+- La zona debe describir la función real del contenedor:
+  hero para la presentación principal;
+  content para las secciones centrales;
+  contact para información y acciones de contacto;
+  floating para accesos flotantes;
+  navigation para la navegación principal;
+  footer para el pie de página.
+
+- Una instancia pertenece a la zona marcada en su propio
+  elemento o en su contenedor antecesor más cercano.
+
+- Para un acceso flotante puedes marcar directamente
+  el enlace con data-capability-zone="floating".
+
+- No etiquetes toda la página como una única zona para
+  eludir las restricciones.
+
+- Conserva las clases funcionales de las implementaciones
+  preconstruidas. Las zonas no las sustituyen.
+
+- Aplica estas reglas también durante las reparaciones.
+
 RECURSOS MULTIMEDIA DISPONIBLES
 
 - WEBSITE_SPEC.available_media contiene imágenes reales ya copiadas

@@ -1,4 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from capabilities.placement_policy import (
+    CapabilityPlacementPolicy,
+)
 
 from specs.capability_spec import CapabilityType
 from state.project_state import CapabilityPlan
@@ -8,6 +12,10 @@ class CapabilityDefinition(BaseModel):
     description: str
     required_inputs: list[str]
     developer_requirements: list[str]
+
+    placement_policy: CapabilityPlacementPolicy = Field(
+        default_factory=CapabilityPlacementPolicy,
+    )
 
 CAPABILITY_REGISTRY: dict[CapabilityType, CapabilityDefinition] = {
     "booking": CapabilityDefinition(
@@ -21,6 +29,16 @@ CAPABILITY_REGISTRY: dict[CapabilityType, CapabilityDefinition] = {
             "No se deben inventar URLs, proveedores ni datos de reserva.",
             "La acción de reserva debe ser fácilmente accesible.",
         ],
+        placement_policy=CapabilityPlacementPolicy(
+            max_instances=1,
+            allowed_zones=(
+                "hero",
+                "content",
+                "contact",
+                "navigation",
+                "footer",
+            ),
+        ),
     ),
 
     "contact_form": CapabilityDefinition(
@@ -34,6 +52,9 @@ CAPABILITY_REGISTRY: dict[CapabilityType, CapabilityDefinition] = {
             "Debe existir una acción de envío claramente identificable.",
             "No se debe simular un envío funcional si no existe backend o proveedor configurado.",
         ],
+        placement_policy=CapabilityPlacementPolicy(
+            allowed_zones=("contact",),
+        )
     ),
 
     "whatsapp": CapabilityDefinition(
@@ -46,6 +67,14 @@ CAPABILITY_REGISTRY: dict[CapabilityType, CapabilityDefinition] = {
             "Debe existir una acción visible para iniciar la conversación.",
             "No se debe inventar un número de teléfono.",
         ],
+        placement_policy=CapabilityPlacementPolicy(
+            max_instances=2,
+            allowed_zones=(
+                "hero",
+                "contact",
+                "floating",
+            ),
+        ),
     ),
 
     "maps": CapabilityDefinition(
@@ -58,6 +87,9 @@ CAPABILITY_REGISTRY: dict[CapabilityType, CapabilityDefinition] = {
             "La ubicación mostrada debe corresponder a la dirección real del negocio.",
             "No se deben inventar coordenadas ni direcciones.",
         ],
+        placement_policy=CapabilityPlacementPolicy(
+            allowed_zones=("contact",),
+        ),
     ),
 
     "gallery": CapabilityDefinition(
@@ -71,6 +103,9 @@ CAPABILITY_REGISTRY: dict[CapabilityType, CapabilityDefinition] = {
             "No debe inventar fotografías del negocio como si fueran reales.",
             "Las imágenes deben integrarse de forma coherente con la estructura de la web.",
         ],
+        placement_policy=CapabilityPlacementPolicy(
+            allowed_zones=("content",),
+        ),
     ),
 
     "reviews": CapabilityDefinition(
@@ -83,6 +118,9 @@ CAPABILITY_REGISTRY: dict[CapabilityType, CapabilityDefinition] = {
             "No se deben inventar reseñas ni valoraciones.",
             "Las opiniones mostradas deben proceder de datos proporcionados o de una fuente configurada.",
         ],
+        placement_policy=CapabilityPlacementPolicy(
+            allowed_zones=("content",),
+        ),
     ),
 
     "analytics": CapabilityDefinition(

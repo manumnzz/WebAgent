@@ -7,7 +7,15 @@ from validation.checks.css_checks import validate_css
 from validation.checks.javascript_checks import validate_javascript
 from validation.checks.booking_links import validate_booking_inquiry_links
 from capabilities.models.booking import BookingConfiguration
+
 from pathlib import Path
+
+from collections.abc import Sequence
+
+from specs.website_spec import WebsiteCapabilitySpec
+from validation.checks.capability_placement import (
+    validate_capability_placement,
+)
 
 
 
@@ -15,6 +23,7 @@ def validate_website(
     booking_configuration: BookingConfiguration | None = None,
     *,
     website_root: Path = WEBSITE_ROOT,
+    capabilities: Sequence[WebsiteCapabilitySpec] = (),
 ) -> ValidationResult:
 
     errors: list[ValidationIssue] = []
@@ -25,20 +34,31 @@ def validate_website(
         )
     )
 
-    #index.html
+    # index.html
     index_path = website_root / "index.html"
 
     if index_path.is_file():
-
         content = index_path.read_text(encoding="utf-8")
 
         if content.strip():
-            errors.extend(validate_html(content))
-            if booking_configuration is not None:
-                errors.extend(validate_booking_inquiry_links(
-                    content, booking_configuration,
-                ))
+            errors.extend(
+                validate_html(content)
+            )
 
+            errors.extend(
+                validate_capability_placement(
+                    content,
+                    capabilities,
+                )
+            )
+
+            if booking_configuration is not None:
+                errors.extend(
+                    validate_booking_inquiry_links(
+                        content,
+                        booking_configuration,
+                    )
+                )
     #styles.css
     styles_path = website_root / "styles.css"
 

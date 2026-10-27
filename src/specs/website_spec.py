@@ -5,6 +5,10 @@ from agents.business_agent import BusinessProfile
 from specs.capability_spec import CapabilityType
 from media.models import WebsiteMediaAsset
 
+from capabilities.placement_policy import (
+    CapabilityPlacementPolicy,
+)
+
 class WebsiteSectionSpec(BaseModel):
     name: str
     purpose: str
@@ -33,6 +37,10 @@ class WebsiteCapabilitySpec(BaseModel):
     input_values: dict[str, Any]
 
     developer_requirements: list[str]
+
+    placement_policy: CapabilityPlacementPolicy = Field(
+        default_factory=CapabilityPlacementPolicy,
+    )
 
 class WebsiteSpec(BaseModel):
     business: BusinessProfile

@@ -154,6 +154,10 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
             input_values=input_values,
 
             developer_requirements=definition.developer_requirements,
+
+            placement_policy=definition.placement_policy.model_copy(
+                deep=True,
+            ),
         )
 
         capabilities.append(capability_spec)

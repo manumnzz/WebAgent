@@ -293,6 +293,7 @@ print(state.development)
 state.validation = validate_website(
     state.capability_inputs.booking_configuration,
     website_root=workspace.website_directory,
+    capabilities=state.website_spec.capabilities,
 )
 
 print("\n--- VALIDATION ---")
@@ -331,6 +332,7 @@ while (
     state.validation = validate_website(
         state.capability_inputs.booking_configuration,
         website_root=workspace.website_directory,
+        capabilities=state.website_spec.capabilities,
     )
 
     print(
