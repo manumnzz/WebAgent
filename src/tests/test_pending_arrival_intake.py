@@ -14,9 +14,27 @@ def test_saves_pending_arrival_mode_without_repair_duration(tmp_path):
         "appointment_types": ["Entrega del vehículo"],
         "booking": {
             "service_durations": {},
-            "appointment_modes": {"entrega-del-vehiculo": "pending_arrival"},
+            "appointment_modes": {
+                "entrega-del-vehiculo": "pending_arrival"
+            },
             "timezone": "Europe/Madrid",
+            "weekly_schedule": [
+                {
+                    "weekday": day,
+                    "ranges": (
+                        [{"start": "09:00", "end": "14:00"}]
+                        if day in ("monday", "tuesday", "wednesday",
+                                "thursday", "friday")
+                        else []
+                    ),
+                }
+                for day in (
+                    "monday", "tuesday", "wednesday",
+                    "thursday", "friday", "saturday", "sunday"
+                )
+            ],
         },
+
     })
 
     assert response.status_code == 201

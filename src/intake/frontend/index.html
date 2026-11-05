@@ -727,6 +727,37 @@
           data.get("booking_slot_interval") ?? ""
         ).trim();
 
+        const requieresSchedule = serviceDurationInputs.some(
+          ({ input, mode }) => 
+          input.value !== "" ||
+          mode.value === "pending_arrival"
+        );
+
+        if (requieresSchedule) {
+          const pendingDays = scheduleRows
+          .filter(row => row.select.value === "unknown")
+          .map(row => row.name);
+
+          if (pendingDays.length > 0) {
+            throw new Error (
+              "Debes confirmar el horario de todos los días. " +
+              "Marca cada día como abierto o cerrado. " +
+              "Días pendientes: " + pendingDays.join(", ")
+            );
+          }
+        }
+
+        const hasOpenDay = scheduleRows.some(
+          row => row.select.value === "open"
+        );
+
+        if (!hasOpenDay) {
+          throw new Error(
+            "Debes configurar al menos un día " +
+            "con citas disponibles."
+          );
+        }
+
         const weeklySchedule = scheduleRows
           .filter(row => row.select.value !== "unknown")
           .map(row => ({

@@ -15,6 +15,8 @@ from capabilities.models.booking import BookingServiceDraft
 
 from media.api import create_media_router
 
+from intake.booking_validation import validate_booking_submission
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -58,9 +60,17 @@ def create_intake_app(
         project_input: ProjectInput,
     ) -> IntakeReceipt:
         try:
-            build_booking_draft_from_input(project_input)
+            draft = build_booking_draft_from_input(
+                project_input
+            )
+
+            validate_booking_submission(draft)
+
         except ValueError as error:
-            raise HTTPException(status_code=422, detail=str(error)) from error
+            raise HTTPException(
+                status_code=422,
+                detail=str(error),
+            ) from error
 
         try:
             submission_id = save_project_input(

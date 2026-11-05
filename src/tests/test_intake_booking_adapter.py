@@ -12,6 +12,8 @@ from intake.booking_adapter import (
 )
 from intake.models import ProjectInput
 
+from intake.booking_validation import validate_booking_submission
+
 
 def make_project_input(**overrides) -> ProjectInput:
     data = {
@@ -232,3 +234,129 @@ def test_inquiry_only_needs_timezone_but_not_hours():
     configuration = finalize_booking_configuration(draft)
     assert configuration.inquiry_types[0].name == "Pedir presupuesto"
     assert configuration.weekly_schedule == []
+
+def test_rejects_booking_with_missing_weekdays():
+    # Arrange
+    project_input = make_project_input(
+        booking={
+            "service_durations": {
+                "valoracion-inicial": 45,
+            },
+            "timezone": "Europe/Madrid",
+            "weekly_schedule": [
+                {
+                    "weekday": "monday",
+                    "ranges": [
+                        {
+                            "start": "09:00",
+                            "end": "14:00",
+                        }
+                    ],
+                }
+            ],
+        }
+    )
+
+    # Act + Assert
+    draft = build_booking_draft_from_input(project_input)
+    
+    with pytest.raises(
+        ValueError,
+        match="siete días",
+    ):
+        validate_booking_submission(draft)
+
+def test_rejects_booking_with_all_days_closed():
+    weekdays = [
+        "monday", "tuesday", "wednesday", "thursday",
+        "friday", "saturday", "sunday"
+    ]
+
+    weekly_schedule = [
+        {
+            "weekday": day,
+            "ranges": [],
+        }
+        for day in weekdays
+    ]
+
+    project_input = make_project_input(booking={
+                "service_durations": {
+                    "valoracion-inicial": 45,
+                },
+                "timezone": "Europe/Madrid",
+                "weekly_schedule": weekly_schedule,
+            })
+
+    draft = build_booking_draft_from_input(project_input)
+
+    with pytest.raises(
+        ValueError,
+        match="al menos un día"):
+        validate_booking_submission(draft)
+
+
+
+def test_accepts_booking_with_valid_schedule():
+    """T03: Accept a complete weekly schedule."""
+    weekdays = [
+        "monday", "tuesday", "wednesday",
+        "thursday", "friday", "saturday", "sunday",
+    ]
+
+    weekly_schedule = [
+        {
+            "weekday": day,
+            "ranges": (
+                [{"start": "09:00", "end": "14:00"}]
+                if day == "monday"
+                else []
+            ),
+        }
+        for day in weekdays
+    ]
+
+    project_input = make_project_input(
+        booking={
+            "service_durations": {
+                "valoracion-inicial": 45,
+            },
+            "timezone": "Europe/Madrid",
+            "weekly_schedule": weekly_schedule,
+        }
+    )
+
+    draft = build_booking_draft_from_input(project_input)
+
+    assert validate_booking_submission(draft) is None
+
+
+def test_accepts_inquiry_without_schedule():
+    """T04: Inquiries do not need opening hours."""
+    project_input = make_project_input(
+        appointment_types=["Pedir presupuesto"],
+        booking={
+            "timezone": "Europe/Madrid",
+        },
+    )
+
+    draft = build_booking_draft_from_input(project_input)
+
+    assert draft is not None
+    assert draft.inquiry_types
+    assert validate_booking_submission(draft) is None
+
+
+def test_accepts_project_without_booking():
+    """T05: Other capabilities do not require Booking."""
+    project_input = make_project_input(
+        requested_features=["maps"],
+        booking=None,
+    )
+
+    draft = build_booking_draft_from_input(project_input)
+
+    assert draft is None
+    assert validate_booking_submission(draft) is None
+
+
