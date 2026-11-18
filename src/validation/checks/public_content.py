@@ -94,6 +94,15 @@ def normalize_text(value: str) -> str:
     return " ".join(without_accents.split())
 
 
+def find_internal_notes(text: str) -> list[str]:
+    normalized = normalize_text(text)
+    return [
+        match.group(0)
+        for pattern in INTERNAL_NOTE_PATTERNS
+        if (match := re.search(pattern, normalized)) is not None
+    ]
+
+
 def validate_public_content(
     content: str,
 ) -> list[ValidationIssue]:
@@ -101,22 +110,16 @@ def validate_public_content(
     parser.feed(content)
     parser.close()
 
-    text = normalize_text(" ".join(parser.parts))
     errors: list[ValidationIssue] = []
 
-    for pattern in INTERNAL_NOTE_PATTERNS:
-        match = re.search(pattern, text)
-
-        if match is None:
-            continue
-
+    for note in find_internal_notes(" ".join(parser.parts)):
         errors.append(
             ValidationIssue(
                 code="public_internal_note",
                 file="index.html",
                 message=(
                     "El HTML publica una nota interna: "
-                    f"'{match.group(0)}'. "
+                    f"'{note}'. "
                     "Retira esa explicación y conserva "
                     "el contenido real disponible. "
                     "Si el bloque solo contiene información "

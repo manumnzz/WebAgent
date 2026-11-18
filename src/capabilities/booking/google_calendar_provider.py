@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from datetime import date, datetime, timedelta
 
 from capabilities.booking.calendar_provider import (
@@ -26,10 +27,13 @@ class GoogleCalendarProvider(CalendarProvider):
         service,
         calendar_id: str = "primary",
         business_info: BookingBusinessInfo | None = None,
+        *,
+        load_business_info: Callable[[], BookingBusinessInfo] | None = None,
     ):
         self.service = service
         self.calendar_id = calendar_id
         self.business_info = business_info
+        self.load_business_info = load_business_info
 
     def get_busy_intervals(
         self,
@@ -85,37 +89,40 @@ class GoogleCalendarProvider(CalendarProvider):
         service_name: str,
     ) -> str:
 
+        business_info = (
+            self.load_business_info() if self.load_business_info else self.business_info
+        )
         description_lines = [
             "Reserva confirmada",
             "",
             f"Servicio: {service_name}",
         ]
 
-        if self.business_info:
+        if business_info:
 
-            if self.business_info.name:
+            if business_info.name:
                 description_lines.append(
-                    f"Negocio: {self.business_info.name}"
+                    f"Negocio: {business_info.name}"
                 )
 
-            if self.business_info.phone:
+            if business_info.phone:
                 description_lines.append(
-                    f"Teléfono: {self.business_info.phone}"
+                    f"Teléfono: {business_info.phone}"
                 )
 
-            if self.business_info.whatsapp:
+            if business_info.whatsapp:
                 description_lines.append(
-                    f"WhatsApp: {self.business_info.whatsapp}"
+                    f"WhatsApp: {business_info.whatsapp}"
                 )
 
-            if self.business_info.email:
+            if business_info.email:
                 description_lines.append(
-                    f"Email: {self.business_info.email}"
+                    f"Email: {business_info.email}"
                 )
 
-            if self.business_info.address:
+            if business_info.address:
                 description_lines.append(
-                    f"Dirección: {self.business_info.address}"
+                    f"Dirección: {business_info.address}"
                 )
 
         if request.notes:
@@ -163,11 +170,11 @@ class GoogleCalendarProvider(CalendarProvider):
         }
 
         if (
-            self.business_info
-            and self.business_info.address
+            business_info
+            and business_info.address
         ):
             event["location"] = (
-                self.business_info.address
+                business_info.address
             )
 
         if request.email:

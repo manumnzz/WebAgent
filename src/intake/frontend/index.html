@@ -68,6 +68,7 @@
     }
     .bulk-days { display: flex; flex-wrap: wrap; gap: 8px 18px; }
     .bulk-days label { margin: 0; white-space: nowrap; }
+    .service-detail { margin: 12px 0 0; padding: 0 16px; }
   </style>
 </head>
 <body>
@@ -107,6 +108,27 @@
           <textarea name="services"></textarea>
           <small>Escribe uno por línea.</small>
         </label>
+
+        <div id="service-details"></div>
+        <template id="service-detail-template">
+          <fieldset class="service-detail">
+            <legend></legend>
+            <label>
+              Descripción (opcional)
+              <textarea maxlength="500"></textarea>
+            </label>
+            <label>
+              Precio (opcional)
+              <input type="text" maxlength="80" placeholder="Ej.: Desde 40 €">
+            </label>
+          </fieldset>
+        </template>
+      </fieldset>
+
+      <fieldset>
+        <legend>Horario comercial (opcional)</legend>
+        <p>Indica el horario que quieres publicar en tu web. Ejemplos: 09:00–14:00 o Cerrado.</p>
+        <div id="opening-hours"></div>
       </fieldset>
 
       <fieldset>
@@ -349,6 +371,58 @@
         .filter(Boolean);
     }
 
+    const businessServicesField = form.elements.namedItem("services");
+    const serviceDetailsContainer = document.querySelector("#service-details");
+    const serviceDetailTemplate = document.querySelector("#service-detail-template");
+    const serviceDetailRows = new Map();
+
+    function syncServiceDetailRows() {
+      const names = new Set(lines(new FormData(form), "services"));
+
+      for (const [name, row] of serviceDetailRows) {
+        if (!names.has(name)) {
+          row.remove();
+        }
+      }
+
+      for (const name of names) {
+        let row = serviceDetailRows.get(name);
+
+        if (!row) {
+          row = serviceDetailTemplate.content.firstElementChild.cloneNode(true);
+          row.querySelector("legend").textContent = name;
+          serviceDetailRows.set(name, row);
+        }
+
+        serviceDetailsContainer.append(row);
+      }
+    }
+
+    function collectServiceDetails(names) {
+      const details = [];
+
+      for (const name of new Set(names)) {
+        const row = serviceDetailRows.get(name);
+
+        if (!row) {
+          continue;
+        }
+
+        const description = row.querySelector("textarea").value.trim() || null;
+        const price = row.querySelector("input").value.trim() || null;
+
+        if (description || price) {
+          details.push({ name, description, price });
+        }
+      }
+
+      return details;
+    }
+
+    businessServicesField.addEventListener("input", syncServiceDetailRows);
+    window.addEventListener("pageshow", syncServiceDetailRows);
+    syncServiceDetailRows();
+
     const bookingCheckbox = form.querySelector(
       'input[name="features"][value="booking"]'
     );
@@ -409,6 +483,20 @@
       ["saturday", "Sábado"],
       ["sunday", "Domingo"]
     ];
+
+    const openingHoursFields = document.querySelector("#opening-hours");
+
+    for (const [weekday, name] of weekdays) {
+      const label = document.createElement("label");
+      label.textContent = name;
+
+      const input = document.createElement("input");
+      input.name = `opening_hours_${weekday}`;
+      input.maxLength = 120;
+
+      label.append(input);
+      openingHoursFields.append(label);
+    }
 
     const scheduleRows = weekdays.map(([weekday, name]) => {
       const row = document.createElement("div");
@@ -727,13 +815,13 @@
           data.get("booking_slot_interval") ?? ""
         ).trim();
 
-        const requieresSchedule = serviceDurationInputs.some(
+        const requiresSchedule = serviceDurationInputs.some(
           ({ input, mode }) => 
           input.value !== "" ||
           mode.value === "pending_arrival"
         );
 
-        if (requieresSchedule) {
+        if (requiresSchedule) {
           const pendingDays = scheduleRows
           .filter(row => row.select.value === "unknown")
           .map(row => row.name);
@@ -751,7 +839,7 @@
           row => row.select.value === "open"
         );
 
-        if (!hasOpenDay) {
+        if (requiresSchedule && !hasOpenDay) {
           throw new Error(
             "Debes configurar al menos un día " +
             "con citas disponibles."
@@ -876,6 +964,8 @@ form.addEventListener("submit", async event => {
       return;
     }
 
+    const services = lines(data, "services");
+
     payload = {
       business_name: String(
         data.get("business_name") ?? ""
@@ -887,7 +977,11 @@ form.addEventListener("submit", async event => {
 
       business_type: optionalText(data, "business_type"),
       location: optionalText(data, "location"),
-      services: lines(data, "services"),
+      services,
+      service_details: collectServiceDetails(services),
+      opening_hours: weekdays
+        .map(([weekday]) => ({ weekday, hours: optionalText(data, `opening_hours_${weekday}`) }))
+        .filter(entry => entry.hours),
 
       contact: {
         phone: optionalText(data, "phone"),

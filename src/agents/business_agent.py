@@ -1,11 +1,15 @@
 from agents.agent_config import AgentConfig
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class ContactInfo(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     phone: str | None = None
     whatsapp: str | None = None
     email: str | None = None
     address: str | None = None
+
+
 class BusinessProfile(BaseModel):
     name: str | None
     business_type: str
@@ -51,6 +55,8 @@ Debes cumplir estas reglas:
   teléfono, WhatsApp, email y dirección.
 
 - No inventes ningún dato de contacto.
+- Los datos de contact y services pueden publicarse. Excluye credenciales,
+  precios internos y datos de terceros que aparezcan en notas del encargo.
 
 - Si desconoces un dato de contacto, déjalo como null.
 """

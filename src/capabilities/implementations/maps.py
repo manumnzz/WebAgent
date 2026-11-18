@@ -6,6 +6,8 @@ from capabilities.capability_implementation import (
 
 def build_maps_implementation(
         business_address: str,
+    *,
+    editable: bool = False,
 ) -> CapabilityImplementation:
 
     clean_address = business_address.strip()
@@ -24,9 +26,15 @@ def build_maps_implementation(
         f"?api=1&query={encoded_address}"
     )
 
+    link_attributes = (
+        'data-content-link="maps" hidden'
+        if editable
+        else f'href="{maps_url}"'
+    )
+
     html = f"""
 <a
-    href="{maps_url}"
+    {link_attributes}
     class="capability-maps"
     target="_blank"
     rel="noopener noreferrer"

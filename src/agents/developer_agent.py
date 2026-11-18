@@ -33,6 +33,12 @@ no debes inventarlos. Implementa la web de forma que esas
 limitaciones queden respetadas.
 
 
+Si el contexto incluye WEBSITE_CONTENT_RUNTIME, sigue ese contrato.
+Los fragmentos editables conservan sus marcadores data-content y cargan
+sus destinos desde el JSON. Una galería seleccionada que aún no esté
+lista puede conservar su plantilla vacía y oculta para publicar imágenes
+más adelante, según el contrato.
+
 CAPABILITIES
 
 WEBSITE_SPEC puede contener una lista de capabilities que representan

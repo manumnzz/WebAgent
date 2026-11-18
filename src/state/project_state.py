@@ -14,6 +14,7 @@ from capabilities.models.booking import (
 )
 from intake.models import ProjectInput
 from media.models import WebsiteMediaAsset
+from content.models import WebsiteContent
 
 class ProjectState(BaseModel):
     project_input: ProjectInput | None = None
@@ -35,6 +36,7 @@ class ProjectState(BaseModel):
     website_spec: WebsiteSpec | None = None
     development: DevelopmentResult | None = None
     validation: ValidationResult | None = None
+    website_content: WebsiteContent | None = None
     
 
 

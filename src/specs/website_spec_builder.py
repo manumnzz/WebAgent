@@ -105,7 +105,6 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
 
     if (
         "gallery" in state.business.requested_features
-        and state.capability_inputs.gallery_assets
         and not any(
             item.type == "gallery"
             for item in planned_capabilities

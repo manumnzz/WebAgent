@@ -23,9 +23,6 @@ from capabilities.booking.configuration_finalizer import (
 from capabilities.booking.config_writer import (
     save_booking_configuration,
 )
-from capabilities.models.booking import (
-    BookingBusinessInfo,
-)
 from projects.workspace import build_project_workspace
 from state.project_state import ProjectState
 from context.context_builders import (
@@ -51,6 +48,10 @@ from capabilities.booking.configuration_readiness import (
     get_booking_missing_information,
 )
 from media.publishing import publish_submission_media
+
+from content.builder import build_website_content
+from content.presentation import install_content_runtime
+from content.storage import save_website_content, validate_content_assets
 
 state = ProjectState()
 
@@ -182,14 +183,6 @@ else:
             )
         )
 
-        booking_configuration.business = BookingBusinessInfo(
-            name=state.business.name,
-            phone=state.business.contact.phone,
-            whatsapp=state.business.contact.whatsapp,
-            email=state.business.contact.email,
-            address=state.business.contact.address,
-        )
-
         state.capability_inputs.booking_configuration = (
             booking_configuration
         )
@@ -279,6 +272,18 @@ print(
 )
 
 # ============================================================
+# WEBSITE CONTENT
+# ============================================================
+
+state.website_content = build_website_content(
+    state.website_spec,
+    state.project_input,
+)
+
+validate_content_assets(state.website_content, workspace.website_directory)
+install_content_runtime(workspace.website_directory)
+
+# ============================================================
 # DEVELOPMENT AGENT /// GENERATE ///
 # ============================================================
 
@@ -301,6 +306,7 @@ state.validation = validate_website(
     state.capability_inputs.booking_configuration,
     website_root=workspace.website_directory,
     capabilities=state.website_spec.capabilities,
+    website_content=state.website_content,
 )
 
 print("\n--- VALIDATION ---")
@@ -332,14 +338,13 @@ while (
     )
 
     print("\n=== DEVELOPMENT RESULT ===")
-    print(
-        state.development.model_dump_json(indent=2)
-    )
+    print(state.development)
 
     state.validation = validate_website(
         state.capability_inputs.booking_configuration,
         website_root=workspace.website_directory,
         capabilities=state.website_spec.capabilities,
+        website_content=state.website_content,
     )
 
     print(
@@ -355,8 +360,17 @@ while (
 # ============================================================
 
 if state.validation.is_valid:
+    save_website_content(
+        state.website_content,
+        path=workspace.website_content_path,
+    )
+
     print("\n=== WEBSITE VALID ===")
     print("La web ha superado la validación.")
+    print(
+        "Contenido editable guardado en:",
+        workspace.website_content_path,
+    )
 
 else: 
 
@@ -373,3 +387,5 @@ else:
             f"- [{error.code}] "
             f"{error.file}: {error.message}"
         )
+
+    raise SystemExit(1)

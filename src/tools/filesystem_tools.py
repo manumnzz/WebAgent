@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from content.presentation import RUNTIME_NAME
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 WEBSITE_ROOT = PROJECT_ROOT / "output" / "website"
@@ -67,6 +69,12 @@ def write_file(
         return {
             "success": False,
             "error": "Ruta no permitida.",
+        }
+
+    if target_path.parent == root and target_path.name.casefold() in {"content.json", RUNTIME_NAME}:
+        return {
+            "success": False,
+            "error": "WebAgent administra los archivos de contenido. Conserva sus marcadores HTML.",
         }
 
     target_path.parent.mkdir(

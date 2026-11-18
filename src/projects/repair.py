@@ -12,6 +12,8 @@ from capabilities.booking.config_loader import (
 from context.context_builders import (
     build_developer_repair_context,
 )
+from content.presentation import RUNTIME_NAME, install_content_runtime
+from content.storage import load_website_content, validate_content_assets
 from projects.workspace import ProjectWorkspace
 from specs.storage import load_website_spec
 from state.project_state import ProjectState
@@ -104,6 +106,12 @@ def repair_project(
         else None
     )
 
+    website_content = None
+    source_markup = (source.website_directory / "index.html").read_text(encoding="utf-8")
+    if RUNTIME_NAME in source_markup or (source.website_directory / RUNTIME_NAME).is_file():
+        website_content = load_website_content(source.website_content_path)
+        validate_content_assets(website_content, source.website_directory)
+
     destination_root.parent.mkdir(
         parents=True,
         exist_ok=True,
@@ -116,10 +124,13 @@ def repair_project(
         prepared = Path(temporary_directory) / "project"
 
         copytree(source_root, prepared)
+        if website_content is not None:
+            install_content_runtime(prepared / "website")
         prepared.rename(destination_root)
 
     state = ProjectState(
         website_spec=specification,
+        website_content=website_content,
     )
 
     attempts = 0
@@ -130,6 +141,7 @@ def repair_project(
             booking_configuration,
             website_root=destination.website_directory,
             capabilities=specification.capabilities,
+            website_content=state.website_content,
         )
 
         if (

@@ -7,6 +7,8 @@ from validation.checks.css_checks import validate_css
 from validation.checks.javascript_checks import validate_javascript
 from validation.checks.booking_links import validate_booking_inquiry_links
 from capabilities.models.booking import BookingConfiguration
+from content.models import WebsiteContent
+from validation.checks.content_runtime import validate_content_runtime
 
 from pathlib import Path
 
@@ -27,6 +29,7 @@ def validate_website(
     *,
     website_root: Path = WEBSITE_ROOT,
     capabilities: Sequence[WebsiteCapabilitySpec] = (),
+    website_content: WebsiteContent | None = None,
 ) -> ValidationResult:
 
     errors: list[ValidationIssue] = []
@@ -57,6 +60,11 @@ def validate_website(
                     capabilities,
                 )
             )
+
+            if website_content is not None:
+                errors.extend(validate_content_runtime(
+                    content, website_root, capabilities,
+                ))
 
             if booking_configuration is not None:
                 errors.extend(

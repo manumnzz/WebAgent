@@ -23,6 +23,9 @@ Debes cumplir estas reglas:
 - Respeta la estructura definida por el UXAgent.
 - Utiliza únicamente hechos presentes en la información disponible.
 - Puedes decidir cómo comunicar una idea, pero no inventar datos factuales.
+- Reserva el copy para titulares, textos de marca y llamadas a la acción.
+- Los nombres del catálogo, precios, horarios y datos de contacto se
+  presentan mediante el contenido operativo. Evita repetirlos en el copy.
 - No inventes precios, horarios, direcciones, testimonios, estadísticas,
   experiencia, miembros del equipo ni características no proporcionadas.
 - Nunca menciones al visitante información interna sobre datos faltantes.
