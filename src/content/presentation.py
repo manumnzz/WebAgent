@@ -41,6 +41,8 @@ Si un dato tiene enlace equivalente, puedes usar ese enlace como marcador.
 Para enlaces usa data-content-link="tel", "email", "whatsapp" o "maps"
 en un <a hidden> sin href inicial. Para el formulario mailto usa el
 fragmento oficial, con data-content-link="email" y sin action inicial.
+Para Maps conserva el iframe con data-content-map y el enlace del fragmento
+oficial. Ambos cargan la dirección desde content.json.
 Usa data-content-text="business_name" si muestras el nombre como dato
 independiente. Los eslóganes, titulares y el resto del copy editorial
 proceden de WebsiteSpec.

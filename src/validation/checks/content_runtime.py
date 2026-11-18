@@ -38,6 +38,7 @@ class ContentMarkup(HTMLParser):
         self.bindings: set[str] = set()
         self.capabilities: set[str] = set()
         self.unbound_capabilities: set[str] = set()
+        self.has_bound_map = False
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
@@ -70,6 +71,17 @@ class ContentMarkup(HTMLParser):
                 if tag == "img" and "data-content-image" in attrs and "src" not in attrs:
                     fields.add("image")
             return
+
+        if (
+            tag == "iframe"
+            and "data-content-map" in attrs
+            and "hidden" in attrs
+            and "src" not in attrs
+            and "srcdoc" not in attrs
+            and (attrs.get("title") or "").strip()
+            and "capability-maps-block" in (direct_parent.get("class") or "").split()
+        ):
+            self.has_bound_map = True
 
         if "data-content-text" in attrs and tag not in VOID_TAGS:
             self.bindings.add(f'text:{attrs["data-content-text"]}')
@@ -143,5 +155,7 @@ def validate_content_runtime(
             name not in parser.capabilities or name in parser.unbound_capabilities
         ):
             report(f"Usa el fragmento editable para cada instancia de la capability '{name}'.")
+        if capability.ready and name == "maps" and not parser.has_bound_map:
+            report("Incluye el iframe de Maps con data-content-map en el bloque oficial.")
 
     return errors

@@ -130,8 +130,10 @@ def fake_agent(agent, user_input, *, workspace=None):
 <aside data-capability-zone="floating">{capabilities.get("whatsapp", "")}</aside>
 <script src="script.js"></script></body></html>
 """
+    capability_css = "\n".join(snippet["css"] for snippet in snippets)
     for name, text in {
-        "index.html": html, "styles.css": "[hidden]{display:none!important}",
+        "index.html": html,
+        "styles.css": "[hidden]{display:none!important}\n" + capability_css,
         "script.js": '"use strict";',
     }.items():
         assert write_file(name, text, website_root=workspace.website_directory)["success"]
@@ -304,14 +306,15 @@ def test_repair_preserves_the_published_content_and_checks_bindings(tmp_path, mo
     content = source.website_content_path.read_bytes()
     html = source.website_directory / "index.html"
     valid = html.read_text()
-    html.write_text(valid.replace('data-content-field="price"', ""))
+    html.write_text(valid.replace('data-content-field="price"', "").replace("data-content-map", ""))
     spec = load_website_spec(source.website_spec_path)
     validation = validate_website(
         website_root=source.website_directory,
         website_content=load_website_content(source.website_content_path),
         capabilities=spec.capabilities,
     )
-    assert any(error.code == "invalid_content_binding" for error in validation.errors)
+    assert any(error.code == "invalid_content_binding" and "price" in error.message for error in validation.errors)
+    assert any(error.code == "invalid_content_binding" and "iframe de Maps" in error.message for error in validation.errors)
 
     def run_repair(context, destination):
         assert "WEBSITE_CONTENT_RUNTIME:" in context

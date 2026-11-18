@@ -53,13 +53,18 @@
     const phone = contact.phone?.replace(/[^\d+]/g, "");
     const whatsapp = contact.whatsapp?.replace(/\D/g, "");
     const email = contact.email?.trim();
+    const address = contact.address?.trim();
+    const encodedAddress = address ? encodeURIComponent(address) : "";
     return {
       tel: /^\+?\d+$/.test(phone ?? "") ? `tel:${phone}` : "",
       whatsapp: whatsapp ? `https://wa.me/${whatsapp}` : "",
       email: email && /^[^\s@,;<>]+@[^\s@,;<>]+$/.test(email)
         ? `mailto:${encodeURIComponent(email).replace("%40", "@")}` : "",
-      maps: contact.address?.trim()
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}`
+      maps: encodedAddress
+        ? `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`
+        : "",
+      mapsEmbed: encodedAddress
+        ? `https://www.google.com/maps?q=${encodedAddress}&output=embed`
         : ""
     };
   }
@@ -91,6 +96,12 @@
       if (url) element.setAttribute(attribute, url);
       else element.removeAttribute(attribute);
       element.hidden = !url;
+    }
+
+    for (const map of document.querySelectorAll("iframe[data-content-map]")) {
+      if (targets.mapsEmbed) map.src = targets.mapsEmbed;
+      else map.removeAttribute("src");
+      map.hidden = !targets.mapsEmbed;
     }
 
     for (const list of document.querySelectorAll("[data-content-list]")) {

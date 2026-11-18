@@ -79,11 +79,12 @@ CAPABILITY_REGISTRY: dict[CapabilityType, CapabilityDefinition] = {
 
     "maps": CapabilityDefinition(
         type="maps",
-        description="Permite mostrar o enlazar la ubicación física del negocio.",
+        description="Muestra la ubicación física del negocio en un mapa incrustado.",
         required_inputs=[
             "business_address",
         ],
         developer_requirements=[
+            "Integra el mapa y su enlace a Google Maps en el mismo bloque de contacto.",
             "La ubicación mostrada debe corresponder a la dirección real del negocio.",
             "No se deben inventar coordenadas ni direcciones.",
         ],

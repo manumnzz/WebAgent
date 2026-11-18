@@ -323,8 +323,8 @@ Cada capability de WEBSITE_SPEC incluye placement_policy.
 - Para WhatsApp, cada enlace que inicia una conversación cuenta
   como una instancia, incluidos los botones flotantes.
 
-- Para Maps, cada integración que muestra o abre la ubicación
-  cuenta como una instancia.
+- Para Maps, conserva el iframe cuadrado y el enlace del bloque oficial.
+  El mapa y su enlace cuentan como una sola instancia en la zona de contacto.
 
 - Para contact_form, cada formulario de contacto cuenta
   como una instancia.
