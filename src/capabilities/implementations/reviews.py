@@ -70,13 +70,25 @@ def build_reviews_implementation(
 """.strip()
         )
 
-    items_html = "\n".join(
-        review_items
+    items_html = "\n".join(review_items)
+    source_url = next(
+        (review.google_maps_url for review in reviews if review.google_maps_url),
+        None,
     )
+    heading = ""
+    source_link = ""
+    if source_url:
+        heading = '<p class="capability-reviews-label">Reseñas destacadas de Google Maps</p>'
+        source_link = (
+            f'<a class="capability-reviews-source" href="{escape(source_url, quote=True)}">'
+            'Ver todas las reseñas en Google Maps</a>'
+        )
 
     html = f"""
 <div class="capability-reviews">
+    {heading}
     {items_html}
+    {source_link}
 </div>
 """.strip()
 

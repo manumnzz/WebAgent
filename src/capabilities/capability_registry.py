@@ -118,6 +118,7 @@ CAPABILITY_REGISTRY: dict[CapabilityType, CapabilityDefinition] = {
         developer_requirements=[
             "No se deben inventar reseñas ni valoraciones.",
             "Las opiniones mostradas deben proceder de datos proporcionados o de una fuente configurada.",
+            "Conserva el texto, autoría, estrellas y orden de las reseñas destacadas, y el enlace a la ficha completa.",
         ],
         placement_policy=CapabilityPlacementPolicy(
             allowed_zones=("content",),

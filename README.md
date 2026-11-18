@@ -870,3 +870,54 @@ PYTHONPATH=src .venv/bin/python -m content --project-id mi-proyecto /tmp/mi-proy
   `gallery`, por ejemplo `assets/fachada.webp`.
 - El comando valida el borrador antes de sustituir el JSON en una sola operación. La edición
   se aplica sin regenerar HTML, CSS o JavaScript y sin ejecutar agentes.
+
+## Reseñas destacadas de Google Maps
+
+La opción **Opiniones de clientes** del formulario habilita la capability de reseñas.
+WebAgent admite una consulta privada del perfil y una fuente autorizada para la web pública.
+
+### Evaluar el conjunto completo de una ficha
+
+La API de Google Business Profile permite recorrer todas las páginas de una ficha
+verificada que administras. Necesitas un proyecto de Google Cloud con
+[acceso a la API](https://developers.google.com/my-business/content/prereqs),
+un cliente OAuth de escritorio y el recurso de la ficha, con formato
+`accounts/ID/locations/ID`. El comando abre la autorización en el navegador y
+muestra la distribución de estrellas y el ranking de las candidatas en la terminal.
+Trabaja en memoria y muestra los IDs y las puntuaciones de las candidatas.
+
+```bash
+PYTHONPATH=src .venv/bin/python -m capabilities.reviews \
+  --location accounts/123/locations/456 \
+  --client-secrets /ruta/privada/cliente-google-business.json
+```
+
+Google limita el almacenamiento del contenido de su API para uso fuera del
+proyecto de Business Profile. La consulta anterior es para auditoría privada.
+[Política de almacenamiento de Google](https://developers.google.com/my-business/content/policies#content-storage).
+
+### Publicar la selección en la web
+
+Marca **Opiniones de clientes** al crear el encargo. Guarda el conjunto de reseñas
+que tienes autorización para volver a publicar en un archivo `google_reviews.json`
+junto al `project_input.json` del encargo. Usa el enlace de la ficha del negocio.
+
+```json
+{
+  "google_maps_url": "https://www.google.com/maps/search/?api=1&query=Taller+Ejemplo",
+  "reviews": [
+    {
+      "author": "Cliente de ejemplo",
+      "text": "Me explicaron la reparación y me avisaron cuando estuvo lista.",
+      "rating": 5,
+      "published_at": "2026-10-20T12:00:00Z"
+    }
+  ]
+}
+```
+
+Ejecuta `make generar` como con cualquier encargo. WebAgent evalúa todo el archivo
+y muestra hasta tres comentarios de cuatro o cinco estrellas. Prioriza las estrellas,
+luego el detalle del comentario y, en caso de empate, la fecha si está disponible.
+El bloque conserva el texto, el autor y las estrellas, indica que son reseñas destacadas
+y enlaza al conjunto completo en Google Maps. La web publica solo las reseñas seleccionadas.

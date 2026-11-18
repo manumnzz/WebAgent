@@ -53,6 +53,7 @@ CONTENT_MARKUP = """
     </template>
   </ul>
   {gallery}
+  {reviews}
 </main>
 <section data-capability-zone="contact">
   <strong data-content-text="business_name" hidden></strong>
@@ -87,7 +88,7 @@ def fake_agent(agent, user_input, *, workspace=None):
             ),
             capability_plan=CapabilityPlan(capabilities=[
                 CapabilitySpec(type=feature, required=True, reason="Solicitada")
-                for feature in requested
+                for feature in requested if feature != "reviews"
             ]),
         )
     if agent.name == "copy_agent":
@@ -117,7 +118,7 @@ def fake_agent(agent, user_input, *, workspace=None):
     )[0]
     capabilities = {snippet["type"]: snippet["html"] for snippet in snippets}
     body = CONTENT_MARKUP.format(**{
-        name: capabilities.get(name, "") for name in ("gallery", "contact_form", "maps")
+        name: capabilities.get(name, "") for name in ("gallery", "contact_form", "maps", "reviews")
     })
     headline = escape(spec["sections"][0]["headline"])
     html = f"""<!doctype html>
@@ -140,7 +141,7 @@ def fake_agent(agent, user_input, *, workspace=None):
     return DevelopmentResult(files_created=[], files_modified=[], implementation_notes=[])
 
 
-def prepare_projects(root, monkeypatch):
+def prepare_projects(root, monkeypatch, *, google_reviews=None):
     monkeypatch.setattr(project_workspace, "PROJECT_ROOT", root)
     monkeypatch.setattr(project_api, "PROJECT_ROOT", root)
     monkeypatch.setattr(agent_runner, "run_agent", fake_agent)
@@ -168,6 +169,8 @@ def prepare_projects(root, monkeypatch):
             "requested_features": ["gallery", "whatsapp", "maps", "contact_form"],
         }
         if bookings:
+            if google_reviews is not None:
+                payload["requested_features"].append("reviews")
             payload["requested_features"].append("booking")
             payload["appointment_types"] = ["Cita independiente"]
             payload["booking"] = {
@@ -196,6 +199,10 @@ def prepare_projects(root, monkeypatch):
                 assert media.status_code == 201, media.text
 
         project_input = root / "intake" / submission_id / "project_input.json"
+        if bookings and google_reviews is not None:
+            project_input.with_name("google_reviews.json").write_text(
+                json.dumps(google_reviews), encoding="utf-8",
+            )
         monkeypatch.setattr(sys, "argv", ["main.py", "--project-id", name, "--input", str(project_input)])
         result = runpy.run_path(str(ROOT / "src" / "main.py"), run_name="__main__")
         assert result["state"].validation.is_valid, result["state"].validation
@@ -356,3 +363,45 @@ def test_cli_publishes_first_gallery_image_and_accepts_legacy_v2(tmp_path, monke
         assert public["gallery"] == payload["gallery"]
         assert client.get("/assets/fachada.webp").status_code == 200
         assert client.get("/index.html").content == original_html
+
+
+def test_generation_publishes_only_featured_reviews_with_attribution(tmp_path, monkeypatch):
+    source = "https://www.google.com/maps/place/Taller/?q=taller&hl=es"
+    text = "Explicación clara sobre <frenos>, revisión completa y presupuesto detallado."
+    workspaces, apps, _ = prepare_projects(
+        tmp_path,
+        monkeypatch,
+        google_reviews={
+            "google_maps_url": source,
+            "reviews": [
+                {"author": "Valoración sin comentario", "rating": 5},
+                {"author": "Menos positiva", "rating": 2, "text": "Tuve que esperar mucho."},
+                {"author": "Breve", "rating": 5, "text": "Genial"},
+                {"author": "Ana & Luis", "rating": 5, "text": text},
+            ],
+        },
+    )
+
+    with TestClient(apps["taller"]) as first, TestClient(apps["estudio"]) as second:
+        html = first.get("/").text
+        assert "Reseñas destacadas de Google Maps" in html
+        assert "Ver todas las reseñas en Google Maps" in html
+        assert source.replace("&", "&amp;") in html
+        assert "Ana &amp; Luis" in html and "&lt;frenos&gt;" in html
+        assert html.index("Ana &amp; Luis") < html.index("Breve")
+        assert html.count('class="capability-review"') == 2
+        assert "Menos positiva" not in html and "Valoración sin comentario" not in html
+        assert "capability-reviews" not in second.get("/").text
+        assert first.get("/google_reviews.json").status_code == 404
+        assert "reviews" not in first.get("/content.json").json()
+
+    workspace = workspaces["taller"]
+    markup_path = workspace.website_directory / "index.html"
+    markup_path.write_text(html.replace("presupuesto detallado", "presupuesto distinto"))
+    spec = load_website_spec(workspace.website_spec_path)
+    validation = validate_website(
+        website_root=workspace.website_directory,
+        capabilities=spec.capabilities,
+        website_content=load_website_content(workspace.website_content_path),
+    )
+    assert any(error.code == "invalid_featured_reviews" for error in validation.errors)

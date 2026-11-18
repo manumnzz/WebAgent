@@ -7,6 +7,7 @@ from pathlib import Path
 import argparse
 
 from intake.loader import load_project_input
+from intake.models import RequestedFeature
 from intake.business_adapter import (
     apply_explicit_business_data,
     build_business_input,
@@ -14,9 +15,7 @@ from intake.business_adapter import (
 from capabilities.capability_input_resolver import (
     resolve_business_capability_inputs,
 )
-from capabilities.models.review import (
-    ReviewData,
-)
+from capabilities.reviews.selection import load_featured_google_reviews
 from capabilities.booking.configuration_finalizer import (
     finalize_booking_configuration,
 )
@@ -56,8 +55,6 @@ from content.storage import save_website_content, validate_content_assets
 state = ProjectState()
 
 state.capability_inputs.gallery_assets = []
-
-state.capability_inputs.review_data = []
 
 project_root = Path(__file__).resolve().parent.parent
 
@@ -105,6 +102,14 @@ if (
         "Este proyecto ya contiene una web o configuración. "
         "Usa un identificador nuevo para esta generación."
     )
+
+if RequestedFeature.REVIEWS in state.project_input.requested_features:
+    review_path = args.input.resolve().with_name("google_reviews.json")
+    if review_path.is_file():
+        try:
+            state.capability_inputs.review_data = load_featured_google_reviews(review_path)
+        except (OSError, ValueError) as error:
+            parser.error(f"No se pudo importar google_reviews.json. {error}")
 
 workspace.create_directories()
 

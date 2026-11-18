@@ -121,6 +121,17 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
             )
         )
 
+    if (
+        "reviews" in state.business.requested_features
+        and state.capability_inputs.review_data
+        and not any(item.type == "reviews" for item in planned_capabilities)
+    ):
+        planned_capabilities.append(CapabilitySpec(
+            type="reviews",
+            required=True,
+            reason="Publicar reseñas destacadas de la ficha del negocio.",
+        ))
+
     for capability in planned_capabilities:
 
         definition = get_capability_definition(

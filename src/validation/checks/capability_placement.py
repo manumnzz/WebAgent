@@ -103,7 +103,8 @@ class CapabilityInstanceParser(HTMLParser):
         if (
             "capability-maps" in classes
             or (
-                host in {"google.com", "www.google.com"}
+                "capability-reviews-source" not in classes
+                and host in {"google.com", "www.google.com"}
                 and (
                     url.path == "/maps"
                     or url.path.startswith("/maps/")

@@ -9,6 +9,7 @@ from validation.checks.booking_links import validate_booking_inquiry_links
 from capabilities.models.booking import BookingConfiguration
 from content.models import WebsiteContent
 from validation.checks.content_runtime import validate_content_runtime
+from validation.checks.featured_reviews import validate_featured_reviews
 
 from pathlib import Path
 
@@ -60,6 +61,8 @@ def validate_website(
                     capabilities,
                 )
             )
+
+            errors.extend(validate_featured_reviews(content, capabilities))
 
             if website_content is not None:
                 errors.extend(validate_content_runtime(
