@@ -2,6 +2,8 @@ from pydantic import BaseModel
 
 from agents.agent_config import AgentConfig
 
+from agents.model_config import get_agent_model
+
 class SectionCopy(BaseModel):
     section_name: str
     headline: str
@@ -72,7 +74,7 @@ COPY_AGENT_TOOLS = []
 
 COPY_AGENT = AgentConfig(
     name="copy_agent",
-    model="gpt-5.6-luna",
+    model=get_agent_model("copy_agent"),
     instructions=COPY_AGENT_INSTRUCTIONS,
     allowed_tools=COPY_AGENT_TOOLS,
     output_schema=WebsiteCopy

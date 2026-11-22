@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from agents.agent_config import AgentConfig
 
+from agents.model_config import get_agent_model
+
 class DevelopmentResult(BaseModel):
     files_created: list[str]
     files_modified: list[str]
@@ -414,7 +416,7 @@ RECURSOS MULTIMEDIA DISPONIBLES
 
 DEVELOPER_AGENT = AgentConfig(
     name="developer_agent",
-    model="gpt-5.6-luna",
+    model=get_agent_model("developer_agent"),
     instructions=DEVELOPER_AGENT_INSTRUCTIONS,
     allowed_tools=[
         "read_file",

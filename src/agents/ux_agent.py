@@ -1,5 +1,7 @@
 from agents.agent_config import AgentConfig
 from specs.capability_spec import CapabilityPlan
+
+from agents.model_config import get_agent_model
 from pydantic import BaseModel
 
 
@@ -69,7 +71,7 @@ UX_AGENT_TOOLS = []
 
 UX_AGENT = AgentConfig(
     name="ux_agent",
-    model="gpt-5.6-luna",
+    model=get_agent_model("ux_agent"),
     instructions=UX_AGENT_INSTRUCTIONS,
     allowed_tools=UX_AGENT_TOOLS,
     output_schema=UXResult

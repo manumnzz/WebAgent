@@ -1,6 +1,8 @@
 from agents.agent_config import AgentConfig
 from pydantic import BaseModel, Field, ConfigDict
 
+from agents.model_config import get_agent_model
+
 class ContactInfo(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -69,7 +71,7 @@ BUSINESS_AGENT_TOOLS = [
 
 BUSINESS_AGENT = AgentConfig(
     name="business_agent",
-    model="gpt-5.6-luna",
+    model=get_agent_model("business_agent"),
     instructions=BUSINESS_AGENT_INSTRUCTIONS,
     allowed_tools=BUSINESS_AGENT_TOOLS,
     output_schema=BusinessProfile
