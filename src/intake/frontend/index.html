@@ -127,7 +127,28 @@
 
       <fieldset>
         <legend>Horario comercial (opcional)</legend>
-        <p>Indica el horario que quieres publicar en tu web. Ejemplos: 09:00–14:00 o Cerrado.</p>
+        <p>Indica el horario que quieres publicar en tu web. Puedes configurar cada día o aplicar el mismo horario a varios días.</p>
+
+        <div class="booking-day">
+          <strong>Aplicar el mismo horario a varios días</strong>
+          <label><input type="checkbox" id="all-opening-days"> Seleccionar todos los días</label>
+          <div id="bulk-opening-days" class="bulk-days"></div>
+          <label>
+            Estado de los días seleccionados
+            <select id="bulk-opening-mode">
+              <option value="open">Abierto</option>
+              <option value="closed">Cerrado</option>
+              <option value="unknown">Sin especificar</option>
+            </select>
+          </label>
+          <label id="bulk-opening-hours-label">
+            Horario para los días seleccionados
+            <input id="bulk-opening-hours" maxlength="120" placeholder="09:00-14:00, 16:00-20:00">
+          </label>
+          <button type="button" id="apply-opening-hours">Aplicar a los días seleccionados</button>
+          <p id="bulk-opening-status" role="status"></p>
+        </div>
+
         <div id="opening-hours"></div>
       </fieldset>
 
@@ -486,17 +507,106 @@
 
     const openingHoursFields = document.querySelector("#opening-hours");
 
-    for (const [weekday, name] of weekdays) {
+    const openingHoursRows = weekdays.map(([weekday, name]) => {
+      const row = document.createElement("div");
+      row.className = "booking-day";
+
       const label = document.createElement("label");
       label.textContent = name;
 
-      const input = document.createElement("input");
-      input.name = `opening_hours_${weekday}`;
-      input.maxLength = 120;
+      const select = document.createElement("select");
+      for (const [value, text] of [
+        ["unknown", "Sin especificar"],
+        ["closed", "Cerrado"],
+        ["open", "Abierto"]
+      ]) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = text;
+        select.append(option);
+      }
+      label.append(select);
 
-      label.append(input);
-      openingHoursFields.append(label);
-    }
+      const input = document.createElement("input");
+      input.name = "opening_hours_" + weekday;
+      input.maxLength = 120;
+      input.placeholder = "09:00-14:00, 16:00-20:00";
+      input.setAttribute("aria-label", "Horario comercial del " + name.toLowerCase());
+
+      function updateDay() {
+        if (select.value === "closed") {
+          input.value = "Cerrado";
+        } else if (select.value === "unknown" || input.value === "Cerrado") {
+          input.value = "";
+        }
+        input.hidden = select.value !== "open";
+      }
+
+      select.addEventListener("change", updateDay);
+      updateDay();
+      row.append(label, input);
+      openingHoursFields.append(row);
+
+      return { weekday, name, select, input };
+    });
+
+    const bulkOpeningDays = document.querySelector("#bulk-opening-days");
+    const bulkOpeningMode = document.querySelector("#bulk-opening-mode");
+    const bulkOpeningHours = document.querySelector("#bulk-opening-hours");
+    const bulkOpeningHoursLabel = document.querySelector("#bulk-opening-hours-label");
+    const bulkOpeningStatus = document.querySelector("#bulk-opening-status");
+    const allOpeningDays = document.querySelector("#all-opening-days");
+
+    const bulkOpeningCheckboxes = openingHoursRows.map(row => {
+      const label = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = row.weekday;
+      label.append(checkbox, " " + row.name);
+      bulkOpeningDays.append(label);
+      checkbox.addEventListener("change", () => {
+        allOpeningDays.checked = bulkOpeningCheckboxes.every(item => item.checkbox.checked);
+      });
+      return { row, checkbox };
+    });
+
+    allOpeningDays.addEventListener("change", () => {
+      for (const { checkbox } of bulkOpeningCheckboxes) {
+        checkbox.checked = allOpeningDays.checked;
+      }
+    });
+
+    bulkOpeningMode.addEventListener("change", () => {
+      bulkOpeningHoursLabel.hidden = bulkOpeningMode.value !== "open";
+    });
+
+    document.querySelector("#apply-opening-hours")
+      .addEventListener("click", () => {
+        const selected = bulkOpeningCheckboxes
+          .filter(({ checkbox }) => checkbox.checked)
+          .map(({ row }) => row);
+
+        if (!selected.length) {
+          bulkOpeningStatus.textContent = "Selecciona al menos un día.";
+          return;
+        }
+
+        const mode = bulkOpeningMode.value;
+        const hours = bulkOpeningHours.value.trim();
+        if (mode === "open" && !hours) {
+          bulkOpeningStatus.textContent = "Escribe el horario de los días abiertos.";
+          return;
+        }
+
+        for (const row of selected) {
+          row.select.value = mode;
+          if (mode === "open") row.input.value = hours;
+          row.select.dispatchEvent(new Event("change"));
+        }
+        bulkOpeningStatus.textContent =
+          "Configuración aplicada a " + selected.length +
+          " día(s). Puedes ajustar cada día por separado.";
+      });
 
     const scheduleRows = weekdays.map(([weekday, name]) => {
       const row = document.createElement("div");
@@ -959,6 +1069,15 @@ form.addEventListener("submit", async event => {
 
     try {
       booking = collectBooking(data);
+      const missingOpeningHours = openingHoursRows
+        .filter(row => row.select.value === "open" && !row.input.value.trim())
+        .map(row => row.name);
+      if (missingOpeningHours.length) {
+        throw new Error(
+          "Indica el horario comercial de los días abiertos: " +
+          missingOpeningHours.join(", ")
+        );
+      }
     } catch (error) {
       result.textContent = error.message;
       return;
