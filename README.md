@@ -900,3 +900,18 @@ y muestra hasta tres comentarios de cuatro o cinco estrellas. Prioriza las estre
 luego el detalle del comentario y, en caso de empate, la fecha si está disponible.
 El bloque conserva el texto, el autor y las estrellas, indica que son reseñas destacadas
 y enlaza al conjunto completo en Google Maps. La web publica solo las reseñas seleccionadas.
+
+## Refinar una web generada
+
+Ejecuta `make refinar`, selecciona una web estática con su WebsiteSpec,
+elige un identificador nuevo y describe los cambios en lenguaje natural.
+El DeveloperAgent modifica una copia, incluso si la web original ya es válida.
+El validador comprueba el resultado y se permiten hasta dos reparaciones.
+La web original no se modifica. La copia puede seleccionarse después con
+`make web` o refinarse otra vez. El feedback y resultado quedan en
+`config/refinement_request.json` y `config/refinement_report.json` de la copia;
+`make coste` consulta sus nuevas métricas, sin duplicar las del original.
+Los proyectos con el runtime antiguo de edición no se admiten en este modo.
+La V1 conserva los datos y capabilities existentes: no permite cambiar
+configuración de Booking ni añadir capabilities nuevas mediante feedback.
+La calidad visual debe revisarse manualmente.

@@ -11,6 +11,7 @@ from capabilities.booking.config_loader import (
 )
 from context.context_builders import (
     build_developer_repair_context,
+    build_developer_refine_context,
 )
 from projects.workspace import ProjectWorkspace
 from specs.storage import load_website_spec
@@ -35,6 +36,10 @@ class RepairReport(BaseModel):
     )
 
 
+class RefinementReport(RepairReport):
+    feedback: str
+
+
 def _run_developer(
     context: str,
     workspace: ProjectWorkspace,
@@ -46,6 +51,7 @@ def _run_developer(
         agent=DEVELOPER_AGENT,
         user_input=context,
         workspace=workspace,
+        metrics_path=workspace.root / "metrics.json",
     )
 
 
@@ -55,7 +61,12 @@ def repair_project(
     *,
     max_attempts: int = 2,
     developer_runner: DeveloperRunner | None = None,
+    feedback: str | None = None,
 ) -> RepairReport:
+    if feedback is not None:
+        feedback = feedback.strip()
+        if not feedback:
+            raise ValueError("El feedback no puede estar vacío.")
     if max_attempts < 1:
         raise ValueError(
             "Debe permitirse al menos un intento de reparación."
@@ -69,6 +80,14 @@ def repair_project(
         raise FileNotFoundError(
             "El proyecto original no contiene website/index.html."
         )
+
+    if feedback is not None and (
+        (source.website_directory / "website-content.js").exists()
+        or "website-content.js" in (
+            source.website_directory / "index.html"
+        ).read_text(encoding="utf-8")
+    ):
+        raise ValueError("Refina una web estática sin el runtime de edición anterior.")
 
     source_root = source.root.resolve()
     destination_root = destination.root.resolve()
@@ -116,6 +135,8 @@ def repair_project(
         prepared = Path(temporary_directory) / "project"
 
         copytree(source_root, prepared)
+        if feedback is not None:
+            (prepared / "metrics.json").unlink(missing_ok=True)
         prepared.rename(destination_root)
 
     state = ProjectState(
@@ -124,6 +145,27 @@ def repair_project(
 
     attempts = 0
     notes: list[str] = []
+
+    runner = developer_runner or _run_developer
+    if feedback is not None:
+        # Preserve the request even if the agent or validation fails.
+        request_path = destination.root / "config" / "refinement_request.json"
+        import json
+        request_path.write_text(
+            json.dumps(
+                {"source_project_id": source.project_id, "feedback": feedback},
+                ensure_ascii=False, indent=2,
+            ),
+            encoding="utf-8",
+        )
+        result = runner(
+            build_developer_refine_context(state, feedback),
+            destination,
+        )
+        if result is None:
+            raise RuntimeError("DeveloperAgent no devolvió un resultado de refinamiento.")
+        state.development = result
+        notes.extend(result.implementation_notes)
 
     while True:
         state.validation = validate_website(
@@ -145,8 +187,10 @@ def repair_project(
             flush=True,
         )
 
-        context = build_developer_repair_context(state)
-        runner = developer_runner or _run_developer
+        context = (
+            build_developer_refine_context(state, feedback, repair=True)
+            if feedback is not None else build_developer_repair_context(state)
+        )
 
         result = runner(context, destination)
 
@@ -159,7 +203,9 @@ def repair_project(
         state.development = result
         notes.extend(result.implementation_notes)
 
-    report = RepairReport(
+    report_class = RefinementReport if feedback is not None else RepairReport
+    report = report_class(
+        **({"feedback": feedback} if feedback is not None else {}),
         source_project_id=source.project_id,
         project_id=destination.project_id,
         attempts=attempts,
@@ -168,7 +214,9 @@ def repair_project(
     )
 
     report_path = (
-        destination.root / "config" / "repair_report.json"
+        destination.root / "config" / (
+            "refinement_report.json" if feedback is not None else "repair_report.json"
+        )
     )
 
     report_path.write_text(

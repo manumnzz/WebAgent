@@ -224,3 +224,72 @@ def test_rejects_destination_inside_source(project_pair):
         )
 
     assert not nested.root.exists()
+
+def test_refinement_runs_on_valid_site_and_preserves_original(project_pair):
+    source, destination = project_pair
+    path = source.website_directory / "index.html"
+    original = path.read_text(encoding="utf-8").replace(INTERNAL_NOTE, "")
+    path.write_text(original, encoding="utf-8")
+    (source.root / "metrics.json").write_text("{}", encoding="utf-8")
+
+    def fake_developer(context, workspace):
+        assert workspace == destination
+        assert "MODE: refine" in context
+        assert "REFINE_PHASE: initial" in context
+        assert "Mejora el hero" in context
+        assert not (workspace.root / "metrics.json").exists()
+        (workspace.website_directory / "index.html").write_text(
+            original.replace("<body>", "<body><h1>Nuevo hero</h1>"),
+            encoding="utf-8",
+        )
+        return development_result()
+
+    report = repair_project(source, destination, feedback="Mejora el hero",
+                            developer_runner=fake_developer)
+    assert report.validation.is_valid
+    assert report.attempts == 0
+    assert report.feedback == "Mejora el hero"
+    assert path.read_text(encoding="utf-8") == original
+    assert (source.root / "metrics.json").is_file()
+    assert "Nuevo hero" in (destination.website_directory / "index.html").read_text()
+    assert (destination.root / "config" / "refinement_report.json").is_file()
+
+
+def test_refinement_repairs_validation_errors(project_pair):
+    source, destination = project_pair
+    calls = []
+
+    def fake_developer(context, workspace):
+        calls.append(context)
+        if len(calls) == 2:
+            path = workspace.website_directory / "index.html"
+            path.write_text(path.read_text().replace(INTERNAL_NOTE, ""))
+        return development_result()
+
+    report = repair_project(source, destination, feedback="Mejora el hero",
+                            developer_runner=fake_developer)
+    assert report.validation.is_valid
+    assert report.attempts == 1
+    assert len(calls) == 2
+    assert "REFINE_PHASE: repair" in calls[1]
+    assert "public_internal_note" in calls[1]
+    assert "Mejora el hero" in calls[1]
+
+
+def test_refinement_rejects_blank_feedback(project_pair):
+    source, destination = project_pair
+    runner = Mock()
+    with pytest.raises(ValueError, match="feedback"):
+        repair_project(source, destination, feedback="  ", developer_runner=runner)
+    runner.assert_not_called()
+    assert not destination.root.exists()
+
+
+def test_refinement_limits_repairs(project_pair):
+    source, destination = project_pair
+    runner = Mock(return_value=development_result())
+    report = repair_project(source, destination, feedback="Mejora el hero",
+                            max_attempts=2, developer_runner=runner)
+    assert not report.validation.is_valid
+    assert report.attempts == 2
+    assert runner.call_count == 3

@@ -79,6 +79,7 @@ def run_agent(
             usage=response.usage,
             duration=duration,
         )
+        persist_metrics()
 
         print(
             f"\n[METRICS] {agent.name}"
@@ -125,15 +126,11 @@ def run_agent(
 
             print(f"\n{agent.name} terminado.")
 
-            persist_metrics()
-
             return response.output_parsed
 
     print(
         f"\n{agent.name} alcanzó el máximo "
         f"de {max_steps} pasos."
     )
-
-    persist_metrics()
 
     return None

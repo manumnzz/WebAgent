@@ -152,7 +152,7 @@ def serve_website():
         },
     )
 
-def repair_website():
+def repair_website(*, refine=False):
     projects_directory = PROJECT_ROOT / "output" / "projects"
 
     paths = [
@@ -172,17 +172,28 @@ def repair_website():
 
     selected = choose(
         paths,
-        title="Proyectos con contrato guardado",
+        title="Proyectos para refinar" if refine else "Proyectos con contrato guardado",
         label=lambda path: path.name,
     )
 
     suggested_id = (
-        f"{selected.name[:70]}-repair-{uuid4().hex[:8]}"
+        f"{selected.name[:70]}-{'refine' if refine else 'repair'}-{uuid4().hex[:8]}"
     )
 
     project_id = input(
         f"\nNombre de la copia [{suggested_id}]: "
     ).strip() or suggested_id
+
+    if refine:
+        feedback = input("\n¿Qué quieres cambiar en la web? ").strip()
+        if not feedback:
+            raise SystemExit("El feedback no puede estar vacío.")
+        print("\nSe refinará una copia. Esta operación consume llamadas al modelo.", flush=True)
+        execute([
+            "src/refine.py", "--source-project-id", selected.name,
+            "--project-id", project_id, "--feedback", feedback,
+        ])
+        return
 
     print(
         "\nSe trabajará sobre una copia del proyecto.\n"
@@ -257,6 +268,7 @@ def main():
             "web",
             "test",
             "reparar",
+            "refinar",
             "coste",
         ],
         nargs="?",
@@ -270,6 +282,9 @@ def main():
 
     elif command == "reparar":
         repair_website()
+
+    elif command == "refinar":
+        repair_website(refine=True)
 
     elif command == "web":
         serve_website()
@@ -317,6 +332,7 @@ def main():
             "  make web         Elegir y servir una web\n"
             "  make test        Ejecutar los tests\n"
             "  make reparar     Reparar una copia de una web\n"
+            "  make refinar     Mejorar una copia mediante feedback\n"
             "  make coste       Consultar costes de un proyecto\n"
         )
 

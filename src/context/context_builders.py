@@ -131,6 +131,43 @@ def build_developer_repair_context(state: ProjectState) -> str:
     """
 
 
+def build_developer_refine_context(
+    state: ProjectState,
+    feedback: str,
+    *,
+    repair: bool = False,
+) -> str:
+    if state.website_spec is None:
+        raise ValueError("WebsiteSpec no disponible para refinamiento.")
+    if not feedback.strip():
+        raise ValueError("El feedback no puede estar vacío.")
+    if repair and state.validation is None:
+        raise ValueError("ValidationResult no disponible para reparación.")
+
+    specification, implementations = _developer_inputs(state)
+    validation = (
+        state.validation.model_dump_json(indent=2)
+        if repair else "null"
+    )
+    phase = "repair" if repair else "initial"
+    return f"""
+        MODE: refine
+        REFINE_PHASE: {phase}
+
+        WEBSITE_SPEC:
+        {specification}
+
+        PREBUILT_CAPABILITY_IMPLEMENTATIONS:
+        {implementations}
+
+        HUMAN_FEEDBACK:
+        {json.dumps(feedback, ensure_ascii=False)}
+
+        VALIDATION_RESULT:
+        {validation}
+    """
+
+
 def _developer_inputs(state: ProjectState) -> tuple[str, str]:
     spec = state.website_spec
     implementations = resolve_ready_capability_implementations(spec)
