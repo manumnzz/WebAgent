@@ -51,11 +51,15 @@ Para cada capability:
 
 - Respeta siempre su description y sus developer_requirements.
 
-- required=true indica que la capability es necesaria para cumplir
-  directamente el objetivo principal del negocio.
+- required=true indica que la capability ha sido solicitada
+  explícitamente por el negocio o es necesaria para cumplir
+  su objetivo principal.
 
-- required=false indica que la capability mejora la experiencia,
-  pero no es imprescindible.
+- Si required=true y ready=true, debes integrar obligatoriamente
+  la capability, aunque existan funcionalidades alternativas.
+
+- required=false indica que la capability es complementaria
+  y no constituye un requisito obligatorio del encargo.
 
 - ready indica si WebAgent dispone actualmente de todos los inputs
   necesarios para implementar funcionalmente la capability.

@@ -325,7 +325,10 @@ def test_capability_zones(content, expected_codes):
         (
             ["/reservar?service_id="],
             "contact",
-            {"invalid_booking_target"},
+            {
+    "invalid_booking_target",
+    "missing_required_capability",
+},
         ),
         (
             [
@@ -333,7 +336,10 @@ def test_capability_zones(content, expected_codes):
                 "&amp;service_id=diagnostico",
             ],
             "contact",
-            {"invalid_booking_target"},
+            {
+    "invalid_booking_target",
+    "missing_required_capability",
+},
         ),
         (
             ["/reservar?service_id=presupuesto"],
@@ -379,3 +385,34 @@ def test_booking_option_placement(
         issue.code
         for issue in errors
     } == expected_codes
+
+
+@pytest.mark.parametrize(
+    ("required", "ready", "expected_errors"),
+    [
+        (True, True, 1),
+        (True, False, 0),
+        (False, True, 0),
+        (False, False, 0),
+    ],
+)
+def test_missing_capability_validation(
+    required,
+    ready,
+    expected_errors,
+):
+
+    capability = build_capability("whatsapp", 2)
+
+    capability.required = required
+    capability.ready = ready
+
+    errors = validate_capability_placement(
+        "<html><body></body></html>",
+        [capability],
+    )
+
+    assert len(errors) == expected_errors
+
+    if expected_errors:
+        assert errors[0].code == "missing_required_capability"

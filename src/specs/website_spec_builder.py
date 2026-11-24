@@ -7,7 +7,7 @@ from specs.website_spec import (
 )
 
 from capabilities.capability_registry import get_capability_definition
-from specs.capability_spec import CapabilitySpec
+
 from capabilities.capability_readiness import (
     evaluate_capability_readiness,
 )
@@ -92,47 +92,7 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
 
     capabilities = []
 
-    planned_capabilities = list(state.capability_plan.capabilities)
-    if (
-        "booking" in state.business.requested_features
-        and state.capability_inputs.booking_configuration is not None
-        and not any(item.type == "booking" for item in planned_capabilities)
-    ):
-        planned_capabilities.append(CapabilitySpec(
-            type="booking", required=True,
-            reason="Gestionar reservas y solicitudes en Calendar.",
-        ))
-
-    if (
-        "gallery" in state.business.requested_features
-        and not any(
-            item.type == "gallery"
-            for item in planned_capabilities
-        )
-    ):
-        planned_capabilities.append(
-            CapabilitySpec(
-                type="gallery",
-                required=True,
-                reason=(
-                    "Mostrar las fotografías proporcionadas "
-                    "por el cliente."
-                ),
-            )
-        )
-
-    if (
-        "reviews" in state.business.requested_features
-        and state.capability_inputs.review_data
-        and not any(item.type == "reviews" for item in planned_capabilities)
-    ):
-        planned_capabilities.append(CapabilitySpec(
-            type="reviews",
-            required=True,
-            reason="Publicar reseñas destacadas de la ficha del negocio.",
-        ))
-
-    for capability in planned_capabilities:
+    for capability in state.capability_plan.capabilities:
 
         definition = get_capability_definition(
             capability.type

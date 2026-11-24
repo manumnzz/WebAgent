@@ -21,6 +21,12 @@ from context.context_builders import (
     build_developer_context,
 )
 
+from capabilities.capability_plan_normalizer import (
+    normalize_capability_plan,
+)
+
+from intake.models import RequestedFeature
+
 
 def build_booking_configuration():
     return BookingConfiguration.model_validate(
@@ -160,7 +166,10 @@ def test_pending_only_booking_is_included_even_if_ux_omits_it():
     state.design.typography_direction = "sans"
     state.design.missing_information = []
     state.design.missing_assets = []
-    state.capability_plan = CapabilityPlan(capabilities=[])
+    state.capability_plan = normalize_capability_plan(
+        plan=CapabilityPlan(capabilities=[]),
+        requested_features=[RequestedFeature.BOOKING],
+    )
     state.capability_inputs = CapabilityInputs(
         booking_configuration=BookingConfiguration.model_validate({
             "timezone": "Europe/Madrid",
@@ -180,6 +189,7 @@ def test_pending_only_booking_is_included_even_if_ux_omits_it():
 
     assert [capability.type for capability in spec.capabilities] == ["booking"]
     assert spec.capabilities[0].ready is True
+    assert spec.capabilities[0].required is True
     assert 'href="/reservar"' in (
         resolve_ready_capability_implementations(spec)[0].html
     )
