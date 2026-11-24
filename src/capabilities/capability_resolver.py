@@ -6,13 +6,8 @@ from capabilities.implementation_registry import (
 )
 from specs.website_spec import WebsiteSpec
 
-EDITABLE_CAPABILITIES = {"whatsapp", "maps", "contact_form", "gallery"}
-
-
 def resolve_ready_capability_implementations(
     website_spec: WebsiteSpec,
-    *,
-    editable_content: bool = False,
 ) -> list[CapabilityImplementation]:
 
     implementations = []
@@ -21,12 +16,7 @@ def resolve_ready_capability_implementations(
 
         inputs = capability.input_values
         if not capability.ready:
-            if not editable_content or capability.type != "gallery":
-                continue
-            inputs = {"gallery_assets": []}
-
-        if editable_content and capability.type in EDITABLE_CAPABILITIES:
-            inputs = {**inputs, "editable": True}
+            continue
 
         implementation = build_capability_implementation(
             capability_type=capability.type,

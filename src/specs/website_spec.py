@@ -4,6 +4,7 @@ from typing import Any
 from agents.business_agent import BusinessProfile
 from specs.capability_spec import CapabilityType
 from media.models import WebsiteMediaAsset
+from intake.models import OpeningHoursEntry, ServiceDetailInput
 
 from capabilities.placement_policy import (
     CapabilityPlacementPolicy,
@@ -44,6 +45,8 @@ class WebsiteCapabilitySpec(BaseModel):
 
 class WebsiteSpec(BaseModel):
     business: BusinessProfile
+    service_details: list[ServiceDetailInput] = Field(default_factory=list)
+    opening_hours: list[OpeningHoursEntry] = Field(default_factory=list, max_length=7)
 
     available_media: list[WebsiteMediaAsset] = Field(
         default_factory=list,

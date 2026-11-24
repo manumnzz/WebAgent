@@ -6,28 +6,22 @@ from capabilities.capability_implementation import CapabilityImplementation
 
 def build_maps_implementation(
     business_address: str,
-    *,
-    editable: bool = False,
 ) -> CapabilityImplementation:
     clean_address = business_address.strip()
     if not clean_address:
         raise ValueError("La dirección del negocio no es válida.")
 
     encoded_address = quote_plus(clean_address)
-    if editable:
-        frame_attributes = "data-content-map hidden"
-        link_attributes = 'data-content-link="maps" hidden'
-    else:
-        map_url = escape(
-            f"https://www.google.com/maps?q={encoded_address}&output=embed",
-            quote=True,
-        )
-        link_url = escape(
-            f"https://www.google.com/maps/search/?api=1&query={encoded_address}",
-            quote=True,
-        )
-        frame_attributes = f'src="{map_url}"'
-        link_attributes = f'href="{link_url}"'
+    map_url = escape(
+        f"https://www.google.com/maps?q={encoded_address}&output=embed",
+        quote=True,
+    )
+    link_url = escape(
+        f"https://www.google.com/maps/search/?api=1&query={encoded_address}",
+        quote=True,
+    )
+    frame_attributes = f'src="{map_url}"'
+    link_attributes = f'href="{link_url}"'
 
     html = f"""
 <div class="capability-maps-block">
@@ -62,9 +56,6 @@ def build_maps_implementation(
     height: auto;
     aspect-ratio: 1;
     border: 0;
-}
-.capability-maps-frame[hidden] {
-    display: none;
 }
 """.strip(),
         javascript="",

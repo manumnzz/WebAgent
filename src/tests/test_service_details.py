@@ -4,7 +4,6 @@ import pytest
 from pydantic import ValidationError
 
 from intake.models import ProjectInput
-from content.builder import build_website_content
 
 
 def test_project_input_accepts_service_details():

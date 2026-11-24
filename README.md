@@ -844,32 +844,11 @@ Cada nueva generación conserva su contrato en `config/website_spec.json`, fuera
 La generación vuelve a usar el modelo declarado en cada `AgentConfig`. Se han retirado los perfiles automáticos de calidad, la inyección de skills y los comandos `capturas` y `mejorar`. Las variables `WEBAGENT_QUALITY_PROFILE` y los overrides de modelo del experimento ya no se consultan. Se conservan el aislamiento por proyecto, multimedia, Booking/OAuth, las reglas de placement y la detección de notas internas en el contenido público.
 
 
-## Editar el contenido de una web generada
+## Edición de webs (pendiente de rediseño)
 
-Las nuevas webs leen su contenido público de `output/projects/<proyecto>/website/content.json`
-mediante `website-content.js`. El catálogo, el contacto, el horario comercial y la galería
-se actualizan al recargar la página. El copy editorial y el diseño se definen en
-`config/website_spec.json`. Las citas y la disponibilidad de Booking se configuran aparte
-en `config/booking.json`. Los proyectos antiguos que aún no cargan el lector siguen sirviéndose
-con sus archivos actuales.
-
-Desde la raíz del repositorio, copia el JSON de un proyecto a un borrador, edítalo y publícalo.
-
-```bash
-cp output/projects/mi-proyecto/website/content.json /tmp/mi-proyecto-contenido.json
-PYTHONPATH=src .venv/bin/python -m content --project-id mi-proyecto /tmp/mi-proyecto-contenido.json
-```
-
-- Conserva el `id` de cada servicio existente al renombrarlo o moverlo. Al añadir un servicio
-  nuevo, escribe su `name` y omite `id`. WebAgent le asigna uno al publicar. Para la siguiente
-  edición, parte del JSON publicado, que ya incluye los IDs asignados.
-- Los precios son texto opcional. Puedes escribir, por ejemplo, `Desde 40 €` o dejar el
-  valor en `null`. El horario comercial usa una entrada por día con `weekday` y `hours`.
-- Si el proyecto tiene galería, puedes reordenar las imágenes, editar su `alt` o cambiar sus
-  rutas. Copia las imágenes nuevas a `website/assets/` y referencia su ruta relativa en
-  `gallery`, por ejemplo `assets/fachada.webp`.
-- El comando valida el borrador antes de sustituir el JSON en una sola operación. La edición
-  se aplica sin regenerar HTML, CSS o JavaScript y sin ejecutar agentes.
+Esta rama experimental genera webs estáticas sin el sistema de edición anterior.
+La edición posterior mediante EditorAgent y un panel compartido se diseñará en las issues #16 y #24.
+Las webs antiguas conservan sus archivos, pero esta rama no mantiene su flujo de edición.
 
 ## Reseñas destacadas de Google Maps
 

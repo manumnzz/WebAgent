@@ -39,18 +39,6 @@ def test_maps_embeds_a_square_and_keeps_the_google_maps_link():
     assert placement.zones["maps"] == ["contact"]
 
 
-def test_editable_map_and_link_start_hidden_without_a_hardcoded_address():
-    markup = MapMarkup(build_maps_implementation("Calle de Alcalá", editable=True).html)
-    frame = markup.elements["iframe"]
-    link = markup.elements["a"]
-
-    assert "data-content-map" in frame
-    assert "src" not in frame and "hidden" in frame
-    assert link["data-content-link"] == "maps"
-    assert "href" not in link and "hidden" in link
-
-
-@pytest.mark.parametrize("editable", [False, True])
-def test_maps_requires_a_business_address(editable):
+def test_maps_requires_a_business_address():
     with pytest.raises(ValueError, match="dirección"):
-        build_maps_implementation(" ", editable=editable)
+        build_maps_implementation(" ")

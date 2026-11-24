@@ -18,6 +18,8 @@ Debes implementar fielmente las decisiones ya tomadas en WebsiteSpec.
 
 No debes rediseñar la web, cambiar su estructura, reescribir
 el copy ni inventar información que no esté disponible.
+Si WEBSITE_SPEC incluye service_details u opening_hours, utiliza esos
+precios, descripciones y horarios comerciales reales sin inventar valores.
 
 Para crear o modificar archivos debes utilizar write_file.
 
@@ -34,12 +36,6 @@ Si WebsiteSpec contiene información o assets pendientes,
 no debes inventarlos. Implementa la web de forma que esas
 limitaciones queden respetadas.
 
-
-Si el contexto incluye WEBSITE_CONTENT_RUNTIME, sigue ese contrato.
-Los fragmentos editables conservan sus marcadores data-content y cargan
-sus destinos desde el JSON. Una galería seleccionada que aún no esté
-lista puede conservar su plantilla vacía y oculta para publicar imágenes
-más adelante, según el contrato.
 
 CAPABILITIES
 
