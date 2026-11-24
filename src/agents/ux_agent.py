@@ -48,11 +48,22 @@ Solo puedes seleccionar capabilities incluidas en el schema proporcionado.
 
 Para cada capability:
 - Marca required=true únicamente cuando la ausencia de esa capability
+  impida cumplir directamente el objetivo principal del negocio. 
+  El objetivo es que se implementen todas las capabilities que el negocio ha pedido.
+
+- Marca required=true cuando la capability haya sido solicitada
+  explícitamente por el negocio en requested_features, aunque
+  existan otras funcionalidades que cumplan un propósito similar.
+
+- Marca también required=true cuando la ausencia de una capability
   impida cumplir directamente el objetivo principal del negocio.
 
-- Marca required=false cuando la capability mejore la experiencia,
-  la conversión, la confianza, la medición o la comodidad,
-  pero la web pueda cumplir su objetivo principal sin ella.
+- Incluye siempre todas las capabilities solicitadas explícitamente
+  por el negocio que estén contempladas en el schema.
+
+- Marca required=false únicamente cuando la capability no haya sido
+  solicitada explícitamente y su implementación sea complementaria
+  al objetivo principal del negocio.
 
 - No interpretes required como "recomendable" o "útil".
 
