@@ -43,16 +43,22 @@ def test_environment_variable_overrides_model(monkeypatch):
     import importlib
     import agents.model_config as model_config
 
-    monkeypatch.setenv("UX_AGENT_MODEL", "test-model")
-    importlib.reload(model_config)
-
     try:
-        assert model_config.get_agent_model("ux_agent") == "test-model"
+        with monkeypatch.context() as env:
+            env.setenv("UX_AGENT_MODEL", "test-model")
+            env.delenv("DEVELOPER_AGENT_MODEL", raising=False)
 
-        assert (
-            model_config.get_agent_model("developer_agent")
-            == model_config.DEFAULT_MODEL
-        )
+            importlib.reload(model_config)
+
+            assert (
+                model_config.get_agent_model("ux_agent")
+                == "test-model"
+            )
+
+            assert (
+                model_config.get_agent_model("developer_agent")
+                == model_config.DEFAULT_MODEL
+            )
+
     finally:
-        monkeypatch.delenv("UX_AGENT_MODEL", raising=False)
         importlib.reload(model_config)

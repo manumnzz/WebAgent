@@ -185,7 +185,21 @@ def repair_website(*, refine=False):
     ).strip() or suggested_id
 
     if refine:
-        feedback = input("\n¿Qué quieres cambiar en la web? ").strip()
+        print("\n¿Qué quieres cambiar en la web?")
+        print("Pega tus instrucciones completas.")
+        print("Escribe FIN en una línea independiente para continuar.\n")
+
+        lines = []
+
+        while True:
+            line = input()
+
+            if line.strip() == "FIN":
+                break
+
+            lines.append(line)
+
+        feedback = "\n".join(lines).strip()
         if not feedback:
             raise SystemExit("El feedback no puede estar vacío.")
         print("\nSe refinará una copia. Esta operación consume llamadas al modelo.", flush=True)
