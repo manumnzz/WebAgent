@@ -6,24 +6,7 @@ from capabilities.capability_implementation import (
 
 def build_gallery_implementation(
         gallery_assets: list[str],
-    *,
-    editable: bool = False,
 ) -> CapabilityImplementation:
-
-    if editable:
-        return CapabilityImplementation(
-            type="gallery",
-            html="""<div class="capability-gallery" data-content-list="gallery" hidden>
-  <template data-content-item>
-    <figure class="capability-gallery-item">
-      <img data-content-image loading="lazy" alt="">
-    </figure>
-  </template>
-</div>""",
-            css="",
-            javascript="",
-            implementation_notes=["La galería carga sus imágenes desde content.json."],
-        )
 
     clean_assets = [
         asset.strip()

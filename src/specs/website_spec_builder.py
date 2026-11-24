@@ -174,6 +174,8 @@ def build_website_spec(state: ProjectState) -> WebsiteSpec:
 
     return WebsiteSpec(
         business=state.business,
+        service_details=(state.project_input.service_details if state.project_input is not None else []),
+        opening_hours=(state.project_input.opening_hours if state.project_input is not None else []),
 
         available_media=state.available_media,
 

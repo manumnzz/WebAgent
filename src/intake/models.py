@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import (
     BaseModel,
@@ -8,7 +9,16 @@ from pydantic import (
 )
 
 from capabilities.models.booking import BookingCollectedInformation
-from content.models import OpeningHoursEntry
+Weekday = Literal[
+    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+]
+
+
+class OpeningHoursEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    weekday: Weekday
+    hours: str = Field(min_length=1, max_length=120)
 
 
 class RequestedFeature(StrEnum):

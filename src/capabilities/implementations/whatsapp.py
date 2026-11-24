@@ -6,8 +6,6 @@ from capabilities.capability_implementation import (
 
 def build_whatsapp_implementation(
         whatsapp_number: str,
-    *,
-    editable: bool = False,
 ) -> CapabilityImplementation:
 
     clean_number = re.sub(
@@ -21,11 +19,7 @@ def build_whatsapp_implementation(
             "El número de WhatsApp no es válido."
         )
 
-    link_attributes = (
-        'data-content-link="whatsapp" hidden'
-        if editable
-        else f'href="https://wa.me/{clean_number}"'
-    )
+    link_attributes = f'href="https://wa.me/{clean_number}"'
 
     html = f"""
     <a

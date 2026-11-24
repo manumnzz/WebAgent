@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from datetime import date, datetime, timedelta
 
 from capabilities.booking.calendar_provider import (
@@ -27,13 +26,10 @@ class GoogleCalendarProvider(CalendarProvider):
         service,
         calendar_id: str = "primary",
         business_info: BookingBusinessInfo | None = None,
-        *,
-        load_business_info: Callable[[], BookingBusinessInfo] | None = None,
     ):
         self.service = service
         self.calendar_id = calendar_id
         self.business_info = business_info
-        self.load_business_info = load_business_info
 
     def get_busy_intervals(
         self,
@@ -89,9 +85,7 @@ class GoogleCalendarProvider(CalendarProvider):
         service_name: str,
     ) -> str:
 
-        business_info = (
-            self.load_business_info() if self.load_business_info else self.business_info
-        )
+        business_info = self.business_info
         description_lines = [
             "Reserva confirmada",
             "",

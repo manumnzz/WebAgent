@@ -46,3 +46,7 @@ def test_developer_context_contains_prebuilt_capability():
         "capability-whatsapp"
         in context
     )
+
+    assert "WEBSITE_CONTENT_RUNTIME" not in context
+    assert "data-content" not in context
+    assert '{"test": "website_spec"}' in context

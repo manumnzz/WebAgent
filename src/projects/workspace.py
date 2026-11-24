@@ -34,9 +34,6 @@ class ProjectWorkspace:
     def website_spec_path(self) -> Path:
         return self.root / "config" / "website_spec.json"
 
-    @property
-    def website_content_path(self) -> Path:
-        return self.website_directory / "content.json"
 
 
 def build_project_workspace(

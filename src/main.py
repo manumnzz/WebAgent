@@ -48,10 +48,6 @@ from capabilities.booking.configuration_readiness import (
 )
 from media.publishing import publish_submission_media
 
-from content.builder import build_website_content
-from content.presentation import install_content_runtime
-from content.storage import save_website_content, validate_content_assets
-
 state = ProjectState()
 
 state.capability_inputs.gallery_assets = []
@@ -283,18 +279,6 @@ print(
 )
 
 # ============================================================
-# WEBSITE CONTENT
-# ============================================================
-
-state.website_content = build_website_content(
-    state.website_spec,
-    state.project_input,
-)
-
-validate_content_assets(state.website_content, workspace.website_directory)
-install_content_runtime(workspace.website_directory)
-
-# ============================================================
 # DEVELOPMENT AGENT /// GENERATE ///
 # ============================================================
 
@@ -318,7 +302,6 @@ state.validation = validate_website(
     state.capability_inputs.booking_configuration,
     website_root=workspace.website_directory,
     capabilities=state.website_spec.capabilities,
-    website_content=state.website_content,
 )
 
 print("\n--- VALIDATION ---")
@@ -357,7 +340,6 @@ while (
         state.capability_inputs.booking_configuration,
         website_root=workspace.website_directory,
         capabilities=state.website_spec.capabilities,
-        website_content=state.website_content,
     )
 
     print(
@@ -373,17 +355,8 @@ while (
 # ============================================================
 
 if state.validation.is_valid:
-    save_website_content(
-        state.website_content,
-        path=workspace.website_content_path,
-    )
-
     print("\n=== WEBSITE VALID ===")
     print("La web ha superado la validación.")
-    print(
-        "Contenido editable guardado en:",
-        workspace.website_content_path,
-    )
 
 else: 
 

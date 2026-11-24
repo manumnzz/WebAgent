@@ -5,9 +5,6 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from api.booking_api import create_booking_app
-from capabilities.models.booking import BookingBusinessInfo
-from content.presentation import RUNTIME_NAME
-from content.storage import load_website_content
 from capabilities.booking.booking_manager import BookingManager
 from capabilities.booking.config_loader import (
     load_booking_configuration,
@@ -67,22 +64,9 @@ def create_project_app() -> FastAPI:
             ),
         )
 
-        def public_business_info() -> BookingBusinessInfo:
-            content = load_website_content(workspace.website_content_path)
-            return BookingBusinessInfo(
-                name=content.business_name,
-                **content.contact.model_dump(),
-            )
-
         calendar_provider = GoogleCalendarProvider(
             service=google_service,
             business_info=configuration.business,
-            load_business_info=(
-                public_business_info
-                if (workspace.website_directory / RUNTIME_NAME).is_file()
-                and workspace.website_content_path.is_file()
-                else None
-            ),
         )
 
         booking_manager = BookingManager(

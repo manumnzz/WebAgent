@@ -5,8 +5,6 @@ from capabilities.capability_implementation import (
 
 def build_contact_form_implementation(
     contact_destination: str,
-    *,
-    editable: bool = False,
 ) -> CapabilityImplementation:
 
     clean_destination = contact_destination.strip()
@@ -16,11 +14,7 @@ def build_contact_form_implementation(
             "El destino del formulario de contacto no es válido."
         )
 
-    link_attributes = (
-        'data-content-link="email" hidden'
-        if editable
-        else f'action="mailto:{clean_destination}"'
-    )
+    link_attributes = f'action="mailto:{clean_destination}"'
 
     html = f"""
 <form

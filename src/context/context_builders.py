@@ -3,10 +3,7 @@ from capabilities.capability_readiness import evaluate_capability_readiness
 from state.project_state import ProjectState
 import json
 
-from content.models import WebsiteContent
-from content.presentation import CONTENT_CONTRACT
 from capabilities.capability_resolver import (
-    EDITABLE_CAPABILITIES,
     resolve_ready_capability_implementations,
 )
 
@@ -91,7 +88,7 @@ def build_developer_context(state: ProjectState) -> str:
             "WebsiteSpec no disponible para DeveloperAgent."
         )
 
-    website_spec_json, implementations_json, instructions = _developer_inputs(state)
+    website_spec_json, implementations_json = _developer_inputs(state)
 
     return f"""
         MODE: generate
@@ -102,7 +99,6 @@ def build_developer_context(state: ProjectState) -> str:
         PREBUILT_CAPABILITY_IMPLEMENTATIONS:
         {implementations_json}
 
-        {instructions}
     """
 
 def build_developer_repair_context(state: ProjectState) -> str:
@@ -117,7 +113,7 @@ def build_developer_repair_context(state: ProjectState) -> str:
             "ValidationResult no disponible para reparación."
         )
 
-    website_spec_json, implementations_json, instructions = _developer_inputs(state)
+    website_spec_json, implementations_json = _developer_inputs(state)
     validation_json = state.validation.model_dump_json(indent=2)
 
     return f"""
@@ -129,45 +125,55 @@ def build_developer_repair_context(state: ProjectState) -> str:
         PREBUILT_CAPABILITY_IMPLEMENTATIONS:
         {implementations_json}
 
-        {instructions}
 
         VALIDATION_RESULT:
         {validation_json}
     """
 
 
-def _developer_inputs(state: ProjectState) -> tuple[str, str, str]:
-    spec = state.website_spec
-    editable = isinstance(state.website_content, WebsiteContent)
-    implementations = resolve_ready_capability_implementations(
-        spec, editable_content=editable,
+def build_developer_refine_context(
+    state: ProjectState,
+    feedback: str,
+    *,
+    repair: bool = False,
+) -> str:
+    if state.website_spec is None:
+        raise ValueError("WebsiteSpec no disponible para refinamiento.")
+    if not feedback.strip():
+        raise ValueError("El feedback no puede estar vacío.")
+    if repair and state.validation is None:
+        raise ValueError("ValidationResult no disponible para reparación.")
+
+    specification, implementations = _developer_inputs(state)
+    validation = (
+        state.validation.model_dump_json(indent=2)
+        if repair else "null"
     )
+    phase = "repair" if repair else "initial"
+    return f"""
+        MODE: refine
+        REFINE_PHASE: {phase}
 
-    if editable:
-        view = spec.model_dump(mode="json")
-        for field in ("contact", "services"):
-            view["business"].pop(field, None)
-        if any(capability.type == "gallery" for capability in spec.capabilities):
-            view["available_media"] = [
-                asset for asset in view["available_media"] if asset["role"] != "gallery"
-            ]
-        for capability in view["capabilities"]:
-            if capability["type"] in EDITABLE_CAPABILITIES:
-                capability["input_values"] = {}
-        website_spec_json = json.dumps(view, indent=2, ensure_ascii=False)
-        populated_contact = [
-            field for field, value in state.website_content.contact.model_dump().items() if value
-        ]
-        instructions = (
-            CONTENT_CONTRACT + "\nDatos de contacto presentes: "
-            + (", ".join(populated_contact) or "ninguno")
-        )
-    else:
-        website_spec_json = spec.model_dump_json(indent=2)
-        instructions = ""
+        WEBSITE_SPEC:
+        {specification}
 
+        PREBUILT_CAPABILITY_IMPLEMENTATIONS:
+        {implementations}
+
+        HUMAN_FEEDBACK:
+        {json.dumps(feedback, ensure_ascii=False)}
+
+        VALIDATION_RESULT:
+        {validation}
+    """
+
+
+def _developer_inputs(state: ProjectState) -> tuple[str, str]:
+    spec = state.website_spec
+    implementations = resolve_ready_capability_implementations(spec)
+    website_spec_json = spec.model_dump_json(indent=2)
     implementations_json = json.dumps(
         [implementation.model_dump() for implementation in implementations],
         indent=2,
     )
-    return website_spec_json, implementations_json, instructions
+    return website_spec_json, implementations_json
