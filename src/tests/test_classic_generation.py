@@ -100,7 +100,11 @@ def test_runner_uses_configured_model_without_studio_override(monkeypatch):
     expected = DevelopmentResult(
         files_created=[], files_modified=[], implementation_notes=[],
     )
-    response = Mock(output=[], output_parsed=expected)
+    response = Mock(
+        output=[],
+        output_parsed=expected,
+        usage=None,
+    )
     client = Mock()
     client.responses.parse.return_value = response
     monkeypatch.setattr(agent_runner, "OpenAI", Mock(return_value=client))

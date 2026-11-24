@@ -88,6 +88,8 @@ state.project_input = load_project_input(
     args.input,
 )
 
+metrics_path = workspace.root / "metrics.json"
+
 website_has_files = (
     workspace.website_directory.exists()
     and any(workspace.website_directory.iterdir())
@@ -143,6 +145,7 @@ business_input = build_business_input(
 business_result = run_agent(
     agent=BUSINESS_AGENT,
     user_input=business_input,
+    metrics_path=metrics_path,
 )
 
 state.business = apply_explicit_business_data(
@@ -218,7 +221,8 @@ ux_input = build_ux_context(state)
 
 ux_result = run_agent(
     agent=UX_AGENT,
-    user_input=ux_input
+    user_input=ux_input,
+    metrics_path=metrics_path,
 )
 
 state.ux = ux_result.structure
@@ -238,7 +242,8 @@ copy_input = build_copy_context(state)
 
 state.website_copy = run_agent(
     agent=COPY_AGENT,
-    user_input=copy_input
+    user_input=copy_input,
+    metrics_path=metrics_path,
 )
 
 print("\nWebsite Copy:")
@@ -252,7 +257,8 @@ design_input = build_design_context(state)
 
 state.design = run_agent(
     agent=DESIGN_AGENT,
-    user_input=design_input
+    user_input=design_input,
+    metrics_path=metrics_path,
 )
 
 print("\nDesign Spec:")
@@ -298,6 +304,7 @@ state.development = run_agent(
     agent=DEVELOPER_AGENT,
     user_input=developer_context,
     workspace=workspace,
+    metrics_path=metrics_path,
 )
 
 print("\n=== DEVELOPMENT RESULT ===")
@@ -340,6 +347,7 @@ while (
         agent=DEVELOPER_AGENT,
         user_input=repair_context,
         workspace=workspace,
+        metrics_path=metrics_path,
     )
 
     print("\n=== DEVELOPMENT RESULT ===")

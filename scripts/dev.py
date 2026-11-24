@@ -201,6 +201,48 @@ def repair_website():
     )
 
 
+def show_project_cost():
+    projects_directory = PROJECT_ROOT / "output" / "projects"
+
+    paths = [
+        path
+        for path in projects_directory.glob("*")
+        if path.is_dir()
+        and (path / "metrics.json").is_file()
+    ]
+
+    paths.sort(
+        key=lambda path: (
+            path / "metrics.json"
+        ).stat().st_mtime,
+        reverse=True,
+    )
+
+    selected = choose(
+        paths,
+        title="Proyectos con métricas disponibles",
+        label=lambda path: path.name,
+    )
+
+    metrics_path = selected / "metrics.json"
+
+    print(
+        f"\nAnalizando costes de: {selected.name}\n",
+        flush=True,
+    )
+
+    execute(
+        [
+            "-m",
+            "agents.cost_report",
+            str(metrics_path),
+        ],
+        environment={
+            "PYTHONPATH": str(PROJECT_ROOT / "src"),
+        },
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Comandos de desarrollo de WebAgent.",
@@ -215,6 +257,7 @@ def main():
             "web",
             "test",
             "reparar",
+            "coste",
         ],
         nargs="?",
         default="ayuda",
@@ -230,6 +273,9 @@ def main():
 
     elif command == "web":
         serve_website()
+
+    elif command == "coste":
+        show_project_cost()
 
     elif command == "formulario":
         print(
@@ -271,6 +317,7 @@ def main():
             "  make web         Elegir y servir una web\n"
             "  make test        Ejecutar los tests\n"
             "  make reparar     Reparar una copia de una web\n"
+            "  make coste       Consultar costes de un proyecto\n"
         )
 
 

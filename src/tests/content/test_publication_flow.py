@@ -67,7 +67,7 @@ CONTENT_MARKUP = """
 """
 
 
-def fake_agent(agent, user_input, *, workspace=None):
+def fake_agent(agent, user_input, *, workspace=None, metrics_path=None):
     if agent.name == "business_agent":
         return BusinessProfile(
             name="Negocio",
