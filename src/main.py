@@ -48,6 +48,10 @@ from capabilities.booking.configuration_readiness import (
 )
 from media.publishing import publish_submission_media
 
+from capabilities.capability_plan_normalizer import (
+    normalize_capability_plan,
+)
+
 state = ProjectState()
 
 state.capability_inputs.gallery_assets = []
@@ -222,7 +226,11 @@ ux_result = run_agent(
 )
 
 state.ux = ux_result.structure
-state.capability_plan = ux_result.capability_plan
+
+state.capability_plan = normalize_capability_plan(
+    plan=ux_result.capability_plan,
+    requested_features=state.project_input.requested_features,
+)
 
 print("\n=== WEBSITE STRUCTURE ===")
 print(state.ux.model_dump_json(indent=2))

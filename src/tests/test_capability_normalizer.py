@@ -161,3 +161,50 @@ def test_empty_plan_without_requested_features():
     result = normalize_capability_plan(plan, [])
 
     assert result.capabilities == []
+
+def test_duplicate_capabilities_preserve_required():
+
+    plan = CapabilityPlan(
+        capabilities=[
+            CapabilitySpec(
+                type="maps",
+                required=True,
+                reason="Necesaria.",
+            ),
+            CapabilitySpec(
+                type="maps",
+                required=False,
+                reason="Complementaria.",
+            ),
+        ]
+    )
+
+    result = normalize_capability_plan(plan, [])
+
+    assert len(result.capabilities) == 1
+    assert result.capabilities[0].required is True
+
+
+def test_duplicate_capabilities_preserve_reasons():
+
+    plan = CapabilityPlan(
+        capabilities=[
+            CapabilitySpec(
+                type="maps",
+                required=False,
+                reason="Facilita la localización.",
+            ),
+            CapabilitySpec(
+                type="maps",
+                required=True,
+                reason="Solicitada por el negocio.",
+            ),
+        ]
+    )
+
+    result = normalize_capability_plan(plan, [])
+
+    assert len(result.capabilities) == 1
+    assert result.capabilities[0].required is True
+    assert "Facilita la localización." in result.capabilities[0].reason
+    assert "Solicitada por el negocio." in result.capabilities[0].reason

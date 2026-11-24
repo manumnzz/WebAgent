@@ -236,6 +236,32 @@ def validate_capability_placement(
         if not capability.ready:
             continue
 
+        capability_present = (
+            parser.counts[capability.type] > 0
+        )
+
+        if capability.type == "booking":
+            capability_present = (
+                capability_present
+                or bool(parser.booking_option_ids)
+            )
+
+        if (
+            capability.required
+            and capability.type != "analytics"
+            and not capability_present
+        ):
+            errors.append(
+                ValidationIssue(
+                    code="missing_required_capability",
+                    file="index.html",
+                    message=(
+                        f"Falta implementar la capability "
+                        f"obligatoria '{capability.type}'."
+                    ),
+                )
+            )
+
         policy = capability.placement_policy
 
         errors.extend(
